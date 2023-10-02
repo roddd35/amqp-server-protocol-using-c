@@ -17,10 +17,3 @@ int readHeader(int connfd){
     
     return 1;
 }
-
-/* colocar isso em cima? junto ao readHeader? */
-void sendResponse(int connfd){
-    /* o que deve ser a resposta que o servidor envia pro cliente, depois de ler o header? */
-    char response[12] = "oi";   
-    write(connfd, response, sizeof(response)); 
-}
