@@ -4,15 +4,14 @@ int readHeader(int connfd){
     char header[8];
     ssize_t size;
     
-    /* verificar se preciso enviar char[] como ponteiro */
     size = read(connfd, header, 8);
     if(size == -1 || strcmp(header, "\x41\x4d\x51\x50\x00\x00\x09\x01") != 0){
+        write(connfd, "\x41\x4d\x51\x50\x00\x00\x09\x01", 8);
         close(connfd);
-        return 0;
+        /* return 0; */
     }
 
-    write(connfd, "\x41\x4d\x51\x50\x00\x00\x09\x01", 8);
-    return 1;    
+    return 1;
 }
 
 void connectionStart(int connfd){
@@ -20,10 +19,9 @@ void connectionStart(int connfd){
     ssize_t size;
 
     /* ler Connection-Start, enviado pelo cliente */
-    size = read(connfd, &request, 582);
+    size = read(connfd, request, 582);
     if(size == -1){
         close(connfd);
-        return 0;
     }
 
     /* devolver um Connection-Start-Ok */
@@ -48,5 +46,4 @@ void connectionStart(int connfd){
                     "\x5f\x62\x69\x6e\x64\x69\x6e\x67\x73\x74\x01\x05\x50\x4c\x41\x49" \
                     "\x4e\x00\x00\x00\x0c\x00\x67\x75\x65\x73\x74\x00\x67\x75\x65\x73" \
                     "\x74\x05\x65\x6e\x5f\x55\x53\xce", 328);
-    return 1;
 }

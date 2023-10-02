@@ -196,22 +196,20 @@ int main (int argc, char **argv) {
                 6) fechar o channel AMQP
                 7) fechar a conexao AMQP
              */
+
+            /* ler header */
+            if(readHeader(connfd)){
+                /* iniciar conexao */
+                connectionStart(connfd);
+            }
             while ((n=read(connfd, recvline, MAXLINE)) > 0) {
-                /* ler header */
-                leuCorretamente = readHeader(connfd);
-                if(leuCorretamente){
-                    /* iniciar conexao */
-                    connectionStart(connfd);
-                    
-                    
-                    recvline[n]=0;
-                    printf("[Cliente conectado no processo filho %d enviou:] ",getpid());
-                    if ((fputs(recvline,stdout)) == EOF) {
-                        perror("fputs :( \n");
-                        exit(6);
-                    }
-                    write(connfd, recvline, strlen(recvline));
+                recvline[n]=0;
+                printf("[Cliente conectado no processo filho %d enviou:] ",getpid());
+                if ((fputs(recvline,stdout)) == EOF) {
+                    perror("fputs :( \n");
+                    exit(6);
                 }
+                write(connfd, recvline, strlen(recvline));
             }
             /* ========================================================= */
             /* ========================================================= */
