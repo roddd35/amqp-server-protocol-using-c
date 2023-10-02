@@ -1,6 +1,5 @@
 #pragma once
 
-#define AMQP_header_size 74
 #define _GNU_SOURCE
 
 #include <stdio.h>
