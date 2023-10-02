@@ -199,19 +199,19 @@ int main (int argc, char **argv) {
             while ((n=read(connfd, recvline, MAXLINE)) > 0) {
                 /* ler header */
                 leuCorretamente = readHeader(connfd);
-                
-                /* iniciar conexao */
-                leuCorretamente = connectionStart(connfd);
-                if(!leuCorretamente)
-                    continue;
-                
-                recvline[n]=0;
-                printf("[Cliente conectado no processo filho %d enviou:] ",getpid());
-                if ((fputs(recvline,stdout)) == EOF) {
-                    perror("fputs :( \n");
-                    exit(6);
+                if(leuCorretamente){
+                    /* iniciar conexao */
+                    connectionStart(connfd);
+                    
+                    
+                    recvline[n]=0;
+                    printf("[Cliente conectado no processo filho %d enviou:] ",getpid());
+                    if ((fputs(recvline,stdout)) == EOF) {
+                        perror("fputs :( \n");
+                        exit(6);
+                    }
+                    write(connfd, recvline, strlen(recvline));
                 }
-                write(connfd, recvline, strlen(recvline));
             }
             /* ========================================================= */
             /* ========================================================= */

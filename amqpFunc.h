@@ -15,4 +15,4 @@
 #include <unistd.h>
 
 int readHeader(int connfd);
-int connectionStart(int connfd);
+void connectionStart(int connfd);

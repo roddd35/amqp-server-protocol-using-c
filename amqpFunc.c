@@ -1,12 +1,13 @@
 #include "amqpFunc.h"
 
 int readHeader(int connfd){
-    char request[8];
+    char header[8];
     ssize_t size;
     
     /* verificar se preciso enviar char[] como ponteiro */
-    size = read(connfd, &request, sizeof(request));
-    if (size == -1 || strncmp(request, "\x41\x4d\x51\x50\x00\x00\x09\x01", sizeof(request)) != 0) {
+    size = read(connfd, header, 8);
+    if(size == -1 || strcmp(header, "\x41\x4d\x51\x50\x00\x00\x09\x01") != 0){
+        close(connfd);
         return 0;
     }
 
@@ -14,7 +15,7 @@ int readHeader(int connfd){
     return 1;    
 }
 
-int connectionStart(int connfd){
+void connectionStart(int connfd){
     char request[582];
     ssize_t size;
 
@@ -46,6 +47,6 @@ int connectionStart(int connfd){
                     "\x78\x63\x68\x61\x6e\x67\x65\x5f\x65\x78\x63\x68\x61\x6e\x67\x65" \
                     "\x5f\x62\x69\x6e\x64\x69\x6e\x67\x73\x74\x01\x05\x50\x4c\x41\x49" \
                     "\x4e\x00\x00\x00\x0c\x00\x67\x75\x65\x73\x74\x00\x67\x75\x65\x73" \
-                    "\x74\x05\x65\x6e\x5f\x55\x53\xce", 329);
+                    "\x74\x05\x65\x6e\x5f\x55\x53\xce", 328);
     return 1;
 }
