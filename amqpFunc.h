@@ -15,5 +15,5 @@
 #include <unistd.h>
 
 int readHeader(int connfd);
-void connectionTune(connfd);
+void connectionTune(int connfd);
 void connectionStart(int connfd);

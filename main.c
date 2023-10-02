@@ -46,7 +46,6 @@ int main (int argc, char **argv) {
     /* Os sockets. Um que será o socket que vai escutar pelas conexões
      * e o outro que vai ser o socket específico de cada conexão
      */
-    int leuCorretamente;
     int listenfd, connfd;
     /* Informações sobre o socket (endereço e porta) ficam nesta struct
      */
@@ -57,10 +56,10 @@ int main (int argc, char **argv) {
     pid_t childpid;
     /* Armazena linhas recebidas do cliente
      */
-    char recvline[MAXLINE + 1];
+    /*char recvline[MAXLINE + 1];*/
     /* Armazena o tamanho da string lida do cliente
      */
-    ssize_t n;
+    /*ssize_t n;*/
     
 
     if (argc != 2) {
