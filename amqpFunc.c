@@ -5,12 +5,12 @@ int readHeader(int connfd){
     ssize_t size;
     
     size = read(connfd, header, 8);
-    if(size == -1 || strcmp(header, "\x41\x4d\x51\x50\x00\x00\x09\x01") != 0){
+    if(size == -1 || strncmp(header, "\x41\x4d\x51\x50\x00\x00\x09\x01", 8) != 0){
         write(connfd, "\x41\x4d\x51\x50\x00\x00\x09\x01", 8);
         close(connfd);
-        /* return 0; */
+        return 0;
     }
-
+    
     return 1;
 }
 
@@ -19,7 +19,7 @@ void connectionStart(int connfd){
     ssize_t size;
 
     /* ler Connection-Start, enviado pelo cliente */
-    size = read(connfd, request, 582);
+    size = read(connfd, request, 586);
     if(size == -1){
         close(connfd);
     }
@@ -46,4 +46,16 @@ void connectionStart(int connfd){
                     "\x5f\x62\x69\x6e\x64\x69\x6e\x67\x73\x74\x01\x05\x50\x4c\x41\x49" \
                     "\x4e\x00\x00\x00\x0c\x00\x67\x75\x65\x73\x74\x00\x67\x75\x65\x73" \
                     "\x74\x05\x65\x6e\x5f\x55\x53\xce", 328);
+}
+
+void connectionTune(connfd){
+    char request[1];
+    ssize_t size;
+
+    size = read(connfd, request, 86);
+    if(size == -1)
+        close(connfd);
+    
+    write(connfd, "\x01\x00\x00\x00\x00\x00\x0c\x00\x0a\x00\x1f\x07\xff\x00\x02\x00" \
+                  "\x00\x00\x00\xce", 20);
 }
