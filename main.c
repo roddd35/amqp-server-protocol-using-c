@@ -203,6 +203,8 @@ int main (int argc, char **argv) {
                     continue;
                 
                 /* iniciar conexao */
+                connectionStart(connfd);
+                
                 
 
                 recvline[n]=0;
