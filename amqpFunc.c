@@ -15,7 +15,7 @@ int readHeader(int connfd){
 }
 
 void connectionStart(int connfd){
-    char request[MAX_CHAR];
+    char conn[MAX_CHAR];
     ssize_t size;
 
     /* escrever o connection-start */
@@ -51,24 +51,38 @@ void connectionStart(int connfd){
                   "\x08\x52\x61\x62\x62\x69\x74\x4d\x51\x07\x76\x65\x72\x73\x69\x6f" \
                   "\x6e\x53\x00\x00\x00\x06\x33\x2e\x39\x2e\x31\x33\x00\x00\x00\x0e" \
                   "\x50\x4c\x41\x49\x4e\x20\x41\x4d\x51\x50\x4c\x41\x49\x4e\x00\x00" \
-                  "\x00\x05\x65\x6e\x5f\x55\x53\xce"
-                , 520);
+                  "\x00\x05\x65\x6e\x5f\x55\x53\xce", 520);
 
     /* ler Connection-Start-Ok, enviado pelo cliente */
-    size = read(connfd, request, sizeof(request));
+    size = read(connfd, conn, sizeof(conn));
     if(size == -1){
         close(connfd);
     }
 }
 
 void connectionTune(int connfd){
-    char request[MAX_CHAR];
+    char tune[MAX_CHAR];
     ssize_t size;
 
     write(connfd, "\x01\x00\x00\x00\x00\x00\x0c\x00\x0a\x00\x1e\x07\xff\x00\x02\x00" \
                   "\x00\x00\x3c\xce", 20);
 
-    size = read(connfd, request, sizeof(request));
+    size = read(connfd, tune, sizeof(tune));
     if(size == -1)
         close(connfd);
+}
+
+void connectionOpen(int connfd){
+    write(connfd, "\x01\x00\x00\x00\x00\x00\x05\x00\x0a\x00\x29\x00\xce", 13);
+}
+
+void channelOpen(int connfd){
+    char channel[MAX_CHAR];
+    ssize_t size;
+    
+    size = read(connfd, channel, sizeof(channel));
+    if(size == -1)
+        close(connfd);
+
+    write(connfd, "\x01\x00\x01\x00\x00\x00\x08\x00\x14\x00\x0b\x00\x00\x00\x00\xce", 16);
 }

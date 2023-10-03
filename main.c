@@ -38,10 +38,6 @@
 
 #include "amqpFunc.h"
 
-#define LISTENQ 1
-#define MAXDATASIZE 100
-#define MAXLINE 4096
-
 int main (int argc, char **argv) {
     /* Os sockets. Um que será o socket que vai escutar pelas conexões
      * e o outro que vai ser o socket específico de cada conexão
@@ -198,9 +194,11 @@ int main (int argc, char **argv) {
 
             /* ler header */
             if(readHeader(connfd)){
-                /* iniciar conexao */
+                /* iniciar conexão e dependências */
                 connectionStart(connfd);
                 connectionTune(connfd);
+                connectionOpen(connfd);
+                channelOpen(connfd);
             }
 
             /* ========================================================= */

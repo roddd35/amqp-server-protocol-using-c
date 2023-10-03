@@ -1,20 +1,25 @@
 #pragma once
 
 #define _GNU_SOURCE
-#define MAX_CHAR 999
+#define LISTENQ 1
+#define MAXLINE 4096
+#define MAX_CHAR 1024
+#define MAXDATASIZE 100
 
+#include <time.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <errno.h>
-#include <string.h>
 #include <netdb.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
 #include <sys/types.h>
+#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
-#include <arpa/inet.h>
-#include <time.h>
-#include <unistd.h>
 
 int readHeader(int connfd);
+void channelOpen(int connfd);
 void connectionTune(int connfd);
+void connectionOpen(int connfd);
 void connectionStart(int connfd);
