@@ -105,3 +105,25 @@ void queueDeclare(int connfd){
     write(connfd, "\x01\x00\x01\x00\x00\x00\x16\x00\x32\x00\x0b\x09\x66\x69\x6c\x61" \
                   "\x54\x65\x73\x74\x65\x00\x00\x00\x00\x00\x00\x00\x00\xce", 30);
 }
+
+void closeChannel(int connfd){
+    char chMessage[MAX_CHAR];
+    ssize_t size;
+
+    size = read(connfd, chMessage, sizeof(chMessage));
+    if(size == -1)
+        close(connfd);
+    
+    write(connfd, "\x01\x00\x01\x00\x00\x00\x04\x00\x14\x00\x29\xce", 12);
+}
+
+void closeConnection(int connfd){
+    char connMessage[MAX_CHAR];
+    ssize_t size;
+
+    size = read(connfd, connMessage, sizeof(connMessage));
+    if(size == -1)
+        close(connfd);
+    
+    write(connfd, "\x01\x00\x00\x00\x00\x00\x04\x00\x0a\x00\x33\xce", 12);
+}

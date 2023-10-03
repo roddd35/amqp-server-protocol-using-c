@@ -200,6 +200,8 @@ int main (int argc, char **argv) {
                 connectionOpen(connfd);
                 channelOpen(connfd);
                 queueDeclare(connfd);
+                closeChannel(connfd);
+                closeConnection(connfd);
             }
 
             /* ========================================================= */
