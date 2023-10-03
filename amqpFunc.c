@@ -65,8 +65,8 @@ void connectionTune(int connfd){
     char request[MAX_CHAR];
     ssize_t size;
 
-    write(connfd, "\x01\x00\x00\x00\x00\x00\x0c\x00\x0a\x00\x1f\x07\xff\x00\x02\x00" \
-                  "\x00\x00\x00\xce", 20);
+    write(connfd, "\x01\x00\x00\x00\x00\x00\x0c\x00\x0a\x00\x1e\x07\xff\x00\x02\x00" \
+                  "\x00\x00\x3c\xce", 20);
 
     size = read(connfd, request, sizeof(request));
     if(size == -1)
