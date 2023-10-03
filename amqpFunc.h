@@ -1,6 +1,7 @@
 #pragma once
 
 #define _GNU_SOURCE
+#define MAX_CHAR 999
 
 #include <stdio.h>
 #include <stdlib.h>
