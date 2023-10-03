@@ -15,11 +15,11 @@ int readHeader(int connfd){
 }
 
 void connectionStart(int connfd){
-    char request[586];
+    char request[520];
     ssize_t size;
 
     /* ler Connection-Start, enviado pelo cliente */
-    size = read(connfd, request, 586);
+    size = read(connfd, request, 520);
     if(size == -1){
         close(connfd);
     }
@@ -49,10 +49,11 @@ void connectionStart(int connfd){
 }
 
 void connectionTune(int connfd){
-    char request[86];
+    char request[20];
     ssize_t size;
 
-    size = read(connfd, request, 86);
+
+    size = read(connfd, request, 20);
     if(size == -1)
         close(connfd);
     

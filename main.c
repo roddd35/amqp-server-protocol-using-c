@@ -200,6 +200,7 @@ int main (int argc, char **argv) {
             if(readHeader(connfd)){
                 /* iniciar conexao */
                 connectionStart(connfd);
+                connectionTune(connfd);
             }
 
             /* ========================================================= */
