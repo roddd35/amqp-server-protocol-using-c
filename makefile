@@ -18,7 +18,7 @@ ep3.o: main.c
 
 ep: ${OBJS} 
 		${CC} ${CFLAGS} -o server ${MAIN} ${OTHERS}
-		@rm -rf *.o *.dSYM .vscode
+		@rm -rf *.o *.dSYM .vscode .DS_Store
 
 clean:
 	@rm -rf server

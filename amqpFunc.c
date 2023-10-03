@@ -73,6 +73,13 @@ void connectionTune(int connfd){
 }
 
 void connectionOpen(int connfd){
+    char conn[MAX_CHAR];
+    ssize_t size;
+
+    size = read(connfd, conn, sizeof(conn));
+    if(size == -1)
+        close(connfd);
+
     write(connfd, "\x01\x00\x00\x00\x00\x00\x05\x00\x0a\x00\x29\x00\xce", 13);
 }
 
@@ -85,4 +92,16 @@ void channelOpen(int connfd){
         close(connfd);
 
     write(connfd, "\x01\x00\x01\x00\x00\x00\x08\x00\x14\x00\x0b\x00\x00\x00\x00\xce", 16);
+}
+
+void queueDeclare(int connfd){
+    char queue[MAX_CHAR];
+    ssize_t size;
+
+    size = read(connfd, queue, sizeof(queue));
+    if(size == -1)
+        close(connfd);
+
+    write(connfd, "\x01\x00\x01\x00\x00\x00\x16\x00\x32\x00\x0b\x09\x66\x69\x6c\x61" \
+                  "\x54\x65\x73\x74\x65\x00\x00\x00\x00\x00\x00\x00\x00\xce", 30);
 }

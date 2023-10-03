@@ -19,6 +19,7 @@
 #include <sys/socket.h>
 
 int readHeader(int connfd);
+void queueDeclare(int connfd);
 void channelOpen(int connfd);
 void connectionTune(int connfd);
 void connectionOpen(int connfd);
