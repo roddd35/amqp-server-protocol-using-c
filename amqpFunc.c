@@ -11,6 +11,11 @@ int char2int(char* message, int size){
     return valor;
 }
 
+char short2char(short input){
+    char c = (char)input;
+    return c;
+}
+
 int readHeader(int connfd){
     char header[MAX_CHAR];
     ssize_t size;
@@ -116,30 +121,27 @@ void channelOpen(int connfd){
 /* NUMBER OF CONSUMERS AND MESSAGE COUNT */
 void queueDeclare(int connfd){
     int i;
-    /*char* str1 = "\x01\x00\x01\x00\x00\x00\x16\x00\x32\x00\x0b";
-    char* str2 = "\x00\x00\x00\x00\x00\x00\x00\x00\xce";
-    char* buffer;*/
     int queueNameSize;
-    char* queueName;
-    char queue[MAX_CHAR];
     ssize_t size;
+    char* queueName;
+    char str1[200];
+    char* str2 = "\x00\x00\x00\x00\x00\x00\x00\x00\xce";
+    char queue[MAX_CHAR];
 
     /* Ler o nome da fila enviado pelo queue.declare */
     size = read(connfd, queue, sizeof(queue));
     if(size == -1)
         close(connfd);
 
-    /* Escreve a confirmação do Queue.Declare-Ok */
-    write(connfd, "\x01\x00\x01\x00\x00\x00\x16\x00\x32\x00\x0b\x09\x66\x69\x6c\x61" \
-                  "\x54\x65\x73\x74\x65\x00\x00\x00\x00\x00\x00\x00\x00\xce", 30);
-
     queueNameSize = char2int(&queue[13], 1);
     queueName = (char*)malloc(queueNameSize*sizeof(char));
     for(i = 0; i < queueNameSize; i++)
-        queueName[i] = queue[14+i];
-    /*queueName = &queue[14];
-    printf("Nome da fila: %s", queueName);
-    */
+        queueName[i] = (char)queue[14+i];
+
+    sprintf(str1, "\x01\x00\x01\x00\x00\x00\x16\x00\x32\x00\x0b\x09%s%s", queueName, str2);
+    /* Escreve a confirmação do Queue.Declare-Ok */
+    printf("%s", str1);
+    write(connfd, str1, strlen(str1));
 }
 
 void closeChannel(int connfd){
