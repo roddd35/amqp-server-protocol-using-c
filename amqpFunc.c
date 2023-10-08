@@ -124,7 +124,7 @@ void queueDeclare(int connfd){
     int queueNameSize;
     ssize_t size;
     char* queueName;
-    char str1[200];
+    char* str1 = "\x01\x00\x01\x00\x00\x00\x16\x00\x32\x00\x0b\x09";
     char* str2 = "\x00\x00\x00\x00\x00\x00\x00\x00\xce";
     char queue[MAX_CHAR];
 
@@ -137,11 +137,30 @@ void queueDeclare(int connfd){
     queueName = (char*)malloc(queueNameSize*sizeof(char));
     for(i = 0; i < queueNameSize; i++)
         queueName[i] = (char)queue[14+i];
-
-    sprintf(str1, "\x01\x00\x01\x00\x00\x00\x16\x00\x32\x00\x0b\x09%s%s", queueName, str2);
+        
     /* Escreve a confirmação do Queue.Declare-Ok */
-    printf("%s", str1);
-    write(connfd, str1, strlen(str1));
+    
+    uint8_t packageSize = 4 + (queueNameSize + 1) + 8;
+
+    uint8_t r1[] = {0x01, 0x00, 0x01, 0x00, 0x00, 0x00,
+                packageSize, 0x00, 0x32, 0x00, 0x0b};
+
+    uint8_t *r2 = malloc((queueNameSize + 1) * sizeof(uint8_t));
+
+    uint8_t r3[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xce};
+
+    r2[0] = queueNameSize;
+    for (int i = 0; i < queueNameSize; i++) {
+        r2[i + 1] = (uint8_t)queueName[i];
+    }
+
+    uint8_t response[11 + queueNameSize + 1 + 9];
+
+    memcpy(response, r1, sizeof(r1));
+    memcpy(response + sizeof(r1), r2, queueNameSize + 1);
+    memcpy(response + sizeof(r1) + queueNameSize + 1, r3, sizeof(r3));
+
+    write(connfd, response, sizeof(response));
 }
 
 void closeChannel(int connfd){
