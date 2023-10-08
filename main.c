@@ -56,7 +56,10 @@ int main (int argc, char **argv) {
     /* Armazena o tamanho da string lida do cliente
      */
     /*ssize_t n;*/
-    char* queueName;
+    
+    int methodID;
+    char methodTxt[MAX_CHAR];
+    char* queueName = NULL;
     
 
     if (argc != 2) {
@@ -164,34 +167,7 @@ int main (int argc, char **argv) {
             /* ========================================================= */
             /* ========================================================= */
             /* TODO: É esta parte do código que terá que ser modificada
-             * para que este servidor consiga interpretar comandos AMQP
-
-             o que temos que fazer:
-                - declaracao da fila (linhas 1 a 23 no wireshark)
-                - conexao de vários clientes (publicar ou requisitar mensagem)
-                - inscricao de cliente na fila e envio das mensagens da fila no esquema round robin
-                - publicacao de uma mensagem na fila
-                - desconexao de cliente
-
-                -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
-                
-                - iniciar servidor, protocolo amqp e afins: linhas 1 a 16
-                - declarar fila: linha 17. Processo acaba na linha 23
-                - colocar clientes na fila: linhas 24 a 59
-                - o cliente é colocado na linha 39 e 57. o restante são padrões do protocolo (comunicacao etc)
-                - enviar mensagens pra fila (e passar para os clientes): linhas 60 em diante 
-                - o publish ocorre nas linhas 75, 102, 129
-
-                -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
-
-                - a ideia para TUDO (abrir fila, inscrever cliente, publicar mensagem) é a mesma
-                2) envia o header do protocolo AMQP para iniciar a conexao
-                3) abre a conexao AMQP
-                4) abre o channel AMQP
-                5) acao a ser feita (abrir fila, inscrever cliente, publicar mensagem)
-                6) fechar o channel AMQP
-                7) fechar a conexao AMQP
-             */
+             * para que este servidor consiga interpretar comandos AMQP  */
 
             /* declarar uma fila */
             if(readHeader(connfd)){
@@ -200,19 +176,32 @@ int main (int argc, char **argv) {
                 connectionTune(connfd);
                 connectionOpen(connfd);
                 channelOpen(connfd);
-                queueName = queueDeclare(connfd);
-                closeChannel(connfd);
-                closeConnection(connfd);
+
+                /* ler qual método deve ser usado */
+                read(connfd, methodTxt, sizeof(methodTxt));
+                methodID = char2int(&methodTxt[9], 2);
+                printf("%d", methodID);
+
+                /* DECLARAR FILA */
+                if(methodID == 10){
+                    /* receber o tamanho e nome da fila declarada */
+                    int queueNameSize = char2int(&methodTxt[13], 1);
+                    queueName = (char*)malloc(queueNameSize*sizeof(char));
+                    for(int i = 0; i < queueNameSize; i++)
+                        queueName[i] = (char)methodTxt[14+i];
+
+                    /* declarar a fila */
+                    queueName = queueDeclare(connfd, queueNameSize, queueName);
+                    closeChannel(connfd);
+                    closeConnection(connfd);
+                }   
+
+                /* INSCREVER CONSUMIDOR NA FILA */
+                else if(methodID == 20)
+                    basicConsume(connfd, queueName);
             }
 
-            /* inscrever um cliente (consume) */
-            if(readHeader(connfd)){
-                connectionStart(connfd);
-                connectionTune(connfd);
-                connectionOpen(connfd);
-                channelOpen(connfd);
-                basicConsume(connfd, queueName);
-            }
+            /*  POSICOES (7, 8) E (9, 10) */
 
             /* ========================================================= */
             /* ========================================================= */

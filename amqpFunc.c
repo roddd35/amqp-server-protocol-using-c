@@ -11,11 +11,6 @@ int char2int(char* message, int size){
     return valor;
 }
 
-char short2char(short input){
-    char c = (char)input;
-    return c;
-}
-
 int readHeader(int connfd){
     char header[MAX_CHAR];
     ssize_t size;
@@ -117,24 +112,7 @@ void channelOpen(int connfd){
     write(connfd, "\x01\x00\x01\x00\x00\x00\x08\x00\x14\x00\x0b\x00\x00\x00\x00\xce", 16);
 }
 
-char* queueDeclare(int connfd){
-    int i;
-    int queueNameSize;
-    char* queueName;
-    char queue[MAX_CHAR];
-    ssize_t size;
-
-    /* Ler o nome da fila enviado pelo queue.declare */
-    size = read(connfd, queue, sizeof(queue));
-    if(size == -1)
-        close(connfd);
-
-    /* obter o nome da fila em queueName */
-    queueNameSize = char2int(&queue[13], 1);
-    queueName = (char*)malloc(queueNameSize*sizeof(char));
-    for(i = 0; i < queueNameSize; i++)
-        queueName[i] = (char)queue[14+i];
-    
+char* queueDeclare(int connfd, int queueNameSize, char* queueName){    
     /* concatenar a mensagem padrão com o nome da fila */
     uint8_t messageSize = 4 + queueNameSize + 1 + 8;
 
@@ -189,12 +167,7 @@ void closeConnection(int connfd){
 }
 
 void basicConsume(int connfd, char* queueName){
-    int i;
-    int queueNameSize = strlen(queueName);
-    char consumeMessage[MAX_CHAR];
-
-    read(connfd, consumeMessage, sizeof(consumeMessage));
-
+    /* escrever o consume-ok */
     write(connfd, "\x01\x00\x01\x00\x00\x00\x24\x00\x3c\x00\x15\x1f\x61\x6d\x71\x2e" \
                   "\x63\x74\x61\x67\x2d\x78\x51\x36\x53\x73\x73\x66\x7a\x67\x50\x43" \
                   "\x51\x48\x4e\x63\x4a\x36\x64\x45\x59\x31\x77\xce", 44);

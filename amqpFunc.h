@@ -19,7 +19,8 @@
 #include <sys/socket.h>
 
 int readHeader(int connfd);
-char* queueDeclare(int connfd);
+int char2int(char* message, int size);
+char* queueDeclare(int connfd, int queueNameSize, char* queueName);
 void channelOpen(int connfd);
 void closeChannel(int connfd);
 void connectionTune(int connfd);
