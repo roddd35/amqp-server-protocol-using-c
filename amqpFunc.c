@@ -1,5 +1,16 @@
 #include "amqpFunc.h"
 
+int char2int(char* message, int size){
+    int i;
+    int valor = 0;
+    for(i = 0; i < size; i++){
+        valor = valor << 8;
+        valor += message[i];
+    }
+
+    return valor;
+}
+
 int readHeader(int connfd){
     char header[MAX_CHAR];
     ssize_t size;
@@ -104,43 +115,31 @@ void channelOpen(int connfd){
 /* ARRUMAR: ENVIAR O NOME DA FILA DO READ NO WRITE */
 /* NUMBER OF CONSUMERS AND MESSAGE COUNT */
 void queueDeclare(int connfd){
-    /*int i;
-    char* str1 = "\x01\x00\x01\x00\x00\x00\x16\x00\x32\x00\x0b\x09";
+    int i;
+    /*char* str1 = "\x01\x00\x01\x00\x00\x00\x16\x00\x32\x00\x0b";
     char* str2 = "\x00\x00\x00\x00\x00\x00\x00\x00\xce";
     char* buffer;*/
+    int queueNameSize;
     char* queueName;
     char queue[MAX_CHAR];
     ssize_t size;
 
-    /* Ler o nome da fila, Queue.Declare */
+    /* Ler o nome da fila enviado pelo queue.declare */
     size = read(connfd, queue, sizeof(queue));
     if(size == -1)
         close(connfd);
-    
-    
+
     /* Escreve a confirmação do Queue.Declare-Ok */
     write(connfd, "\x01\x00\x01\x00\x00\x00\x16\x00\x32\x00\x0b\x09\x66\x69\x6c\x61" \
                   "\x54\x65\x73\x74\x65\x00\x00\x00\x00\x00\x00\x00\x00\xce", 30);
 
-    queueName = &queue[14];
+    queueNameSize = char2int(&queue[13], 1);
+    queueName = (char*)malloc(queueNameSize*sizeof(char));
+    for(i = 0; i < queueNameSize; i++)
+        queueName[i] = queue[14+i];
+    /*queueName = &queue[14];
     printf("Nome da fila: %s", queueName);
-    /*
-    write(connfd, str1, 12);
-    write(connfd, queueName, sizeof(queueName));
-    write(connfd, str2, 9);
-
-    for(i = 0; queue[14+i] != '\0'; i++)
-        i++;
-    queueName = malloc(sizeof(char) * i);
-    for(i = 0; queue[14+i] != '\0'; i++)
-        queueName[i] = queue[i];
-    buffer = malloc((strlen(str1) + strlen(str2) + strlen(buffer)) * sizeof(char));
-
-    strcpy(buffer, str1);
-    strcat(buffer, queueName);
-    strcat(buffer, str2);
-
-    write(connfd, buffer, sizeof(buffer));*/
+    */
 }
 
 void closeChannel(int connfd){
