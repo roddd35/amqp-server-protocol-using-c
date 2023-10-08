@@ -56,6 +56,7 @@ int main (int argc, char **argv) {
     /* Armazena o tamanho da string lida do cliente
      */
     /*ssize_t n;*/
+    char* queueName;
     
 
     if (argc != 2) {
@@ -192,16 +193,25 @@ int main (int argc, char **argv) {
                 7) fechar a conexao AMQP
              */
 
-            /* ler header */
+            /* declarar uma fila */
             if(readHeader(connfd)){
                 /* iniciar conexão e dependências */
                 connectionStart(connfd);
                 connectionTune(connfd);
                 connectionOpen(connfd);
                 channelOpen(connfd);
-                queueDeclare(connfd);
+                queueName = queueDeclare(connfd);
                 closeChannel(connfd);
                 closeConnection(connfd);
+            }
+
+            /* inscrever um cliente (consume) */
+            if(readHeader(connfd)){
+                connectionStart(connfd);
+                connectionTune(connfd);
+                connectionOpen(connfd);
+                channelOpen(connfd);
+                basicConsume(connfd, queueName);
             }
 
             /* ========================================================= */

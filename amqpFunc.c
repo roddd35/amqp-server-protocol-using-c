@@ -117,7 +117,7 @@ void channelOpen(int connfd){
     write(connfd, "\x01\x00\x01\x00\x00\x00\x08\x00\x14\x00\x0b\x00\x00\x00\x00\xce", 16);
 }
 
-void queueDeclare(int connfd){
+char* queueDeclare(int connfd){
     int i;
     int queueNameSize;
     char* queueName;
@@ -141,7 +141,7 @@ void queueDeclare(int connfd){
     uint8_t str1[] = {0x01, 0x00, 0x01, 0x00, 0x00, 0x00,
                 messageSize, 0x00, 0x32, 0x00, 0x0b};
 
-    uint8_t *str2 = malloc((queueNameSize + 1) * sizeof(uint8_t));
+    uint8_t* str2 = malloc((queueNameSize + 1) * sizeof(uint8_t));
 
     uint8_t str3[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xce};
 
@@ -158,6 +158,8 @@ void queueDeclare(int connfd){
 
     /* Escreve a confirmação do Queue.Declare-Ok */
     write(connfd, response, sizeof(response));
+
+    return queueName;
 }
 
 void closeChannel(int connfd){
@@ -184,4 +186,12 @@ void closeConnection(int connfd){
     
     /* Caso receba reply=200, escrever Connection.Close-Ok*/
     write(connfd, "\x01\x00\x00\x00\x00\x00\x04\x00\x0a\x00\x33\xce", 12);
+}
+
+void basicConsume(int connfd, char* queueName){
+    int i;
+    int queueNameSize = strlen(queueName);
+    char consumeMessage[MAX_CHAR];
+
+    read(connfd, consumeMessage, sizeof(consumeMessage));
 }

@@ -19,10 +19,11 @@
 #include <sys/socket.h>
 
 int readHeader(int connfd);
+char* queueDeclare(int connfd);
 void channelOpen(int connfd);
-void queueDeclare(int connfd);
 void closeChannel(int connfd);
 void connectionTune(int connfd);
 void connectionOpen(int connfd);
 void connectionStart(int connfd);
 void closeConnection(int connfd);
+void basicConsume(int connfd, char* queueName);
