@@ -117,49 +117,46 @@ void channelOpen(int connfd){
     write(connfd, "\x01\x00\x01\x00\x00\x00\x08\x00\x14\x00\x0b\x00\x00\x00\x00\xce", 16);
 }
 
-/* ARRUMAR: ENVIAR O NOME DA FILA DO READ NO WRITE */
-/* NUMBER OF CONSUMERS AND MESSAGE COUNT */
 void queueDeclare(int connfd){
     int i;
     int queueNameSize;
-    ssize_t size;
     char* queueName;
-    char* str1 = "\x01\x00\x01\x00\x00\x00\x16\x00\x32\x00\x0b\x09";
-    char* str2 = "\x00\x00\x00\x00\x00\x00\x00\x00\xce";
     char queue[MAX_CHAR];
+    ssize_t size;
 
     /* Ler o nome da fila enviado pelo queue.declare */
     size = read(connfd, queue, sizeof(queue));
     if(size == -1)
         close(connfd);
 
+    /* obter o nome da fila em queueName */
     queueNameSize = char2int(&queue[13], 1);
     queueName = (char*)malloc(queueNameSize*sizeof(char));
     for(i = 0; i < queueNameSize; i++)
         queueName[i] = (char)queue[14+i];
-        
-    /* Escreve a confirmação do Queue.Declare-Ok */
     
-    uint8_t packageSize = 4 + (queueNameSize + 1) + 8;
+    /* concatenar a mensagem padrão com o nome da fila */
+    uint8_t messageSize = 4 + queueNameSize + 1 + 8;
 
-    uint8_t r1[] = {0x01, 0x00, 0x01, 0x00, 0x00, 0x00,
-                packageSize, 0x00, 0x32, 0x00, 0x0b};
+    uint8_t str1[] = {0x01, 0x00, 0x01, 0x00, 0x00, 0x00,
+                messageSize, 0x00, 0x32, 0x00, 0x0b};
 
-    uint8_t *r2 = malloc((queueNameSize + 1) * sizeof(uint8_t));
+    uint8_t *str2 = malloc((queueNameSize + 1) * sizeof(uint8_t));
 
-    uint8_t r3[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xce};
+    uint8_t str3[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xce};
 
-    r2[0] = queueNameSize;
+    str2[0] = queueNameSize;
     for (int i = 0; i < queueNameSize; i++) {
-        r2[i + 1] = (uint8_t)queueName[i];
+        str2[i + 1] = (uint8_t)queueName[i];
     }
 
-    uint8_t response[11 + queueNameSize + 1 + 9];
+    uint8_t response[11 + (queueNameSize + 1) + 9];
 
-    memcpy(response, r1, sizeof(r1));
-    memcpy(response + sizeof(r1), r2, queueNameSize + 1);
-    memcpy(response + sizeof(r1) + queueNameSize + 1, r3, sizeof(r3));
+    memcpy(response, str1, sizeof(str1));
+    memcpy(response + sizeof(str1), str2, queueNameSize + 1);
+    memcpy(response + sizeof(str1) + queueNameSize + 1, str3, sizeof(str3));
 
+    /* Escreve a confirmação do Queue.Declare-Ok */
     write(connfd, response, sizeof(response));
 }
 
