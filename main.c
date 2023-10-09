@@ -118,7 +118,13 @@ int main (int argc, char **argv) {
 
                 /* PUBLICAR MENSAGEM NA FILA */
                 else if(methodID == 40){
-                    message = basicPublish(connfd, &publishQueue, methodTxt);
+                    /* separar o nome da fila e seu tamanho */
+                    int queueNameSize = char2int(&methodTxt[14], 1);
+                    publishQueue = (char*)malloc(queueNameSize*sizeof(char));
+                    for(int i = 0; i < queueNameSize; i++)
+                        publishQueue[i] = (char)methodTxt[15+i];
+
+                    message = basicPublish(connfd);
                     closeChannel(connfd);
                     basicDeliver(connfd, publishQueue, message);
                     basicAck(connfd);
