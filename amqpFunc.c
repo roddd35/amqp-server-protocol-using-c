@@ -112,7 +112,7 @@ void channelOpen(int connfd){
     write(connfd, "\x01\x00\x01\x00\x00\x00\x08\x00\x14\x00\x0b\x00\x00\x00\x00\xce", 16);
 }
 
-char* queueDeclare(int connfd, int queueNameSize, char* queueName){    
+void queueDeclare(int connfd, int queueNameSize, char* queueName){    
     /* concatenar a mensagem padrão com o nome da fila */
     uint8_t messageSize = 4 + queueNameSize + 1 + 8;
 
@@ -136,8 +136,6 @@ char* queueDeclare(int connfd, int queueNameSize, char* queueName){
 
     /* Escreve a confirmação do Queue.Declare-Ok */
     write(connfd, response, sizeof(response));
-
-    return queueName;
 }
 
 void closeChannel(int connfd){
@@ -148,7 +146,9 @@ void closeChannel(int connfd){
     size = read(connfd, chMessage, sizeof(chMessage));
     if(size == -1)
         close(connfd);
-    
+}
+
+void closeChannelOk(int connfd){
     /* Caso receba reply=200, escrever Channel.Close-Ok*/
     write(connfd, "\x01\x00\x01\x00\x00\x00\x04\x00\x14\x00\x29\xce", 12);
 }
@@ -171,4 +171,57 @@ void basicConsume(int connfd, char* queueName){
     write(connfd, "\x01\x00\x01\x00\x00\x00\x24\x00\x3c\x00\x15\x1f\x61\x6d\x71\x2e" \
                   "\x63\x74\x61\x67\x2d\x78\x51\x36\x53\x73\x73\x66\x7a\x67\x50\x43" \
                   "\x51\x48\x4e\x63\x4a\x36\x64\x45\x59\x31\x77\xce", 44);
+}
+
+/* TALVEZ: USAR UM UNICO READ, PARA ISSO REAJUSTAR AS POSICOES */
+char* basicPublish(int connfd, char* queueName){
+    int messageSize;
+    int queueNameSize;
+    char publMsg1[MAX_CHAR];
+    char publMsg2[MAX_CHAR];
+    char publMsg3[MAX_CHAR];
+    char* message;
+    ssize_t size;
+
+
+    size = read(connfd, publMsg1, sizeof(publMsg1));
+    if(size == -1)
+        close(connfd);
+
+    /* receber o nome da fila de publicação da mensagem, na primeira mensagem lida */
+    queueNameSize = char2int(&publMsg1[14], 1);
+    queueName = (char*)malloc(queueNameSize*sizeof(char));
+    for(int i = 0; i < queueNameSize; i++)
+        queueName[i] = (char)publMsg1[15+i];
+
+    /* ler a segunda mensagem */
+    size = read(connfd, publMsg2, sizeof(publMsg2));
+    if(size == -1)
+        close(connfd);
+    
+    /* receber a mensagem a ser publicada */
+    size = read(connfd, publMsg3, sizeof(publMsg3));
+    if(size == -1)
+        close(connfd);
+    
+    /* se tiver que mudar para um unico read, aqui sera &publMsg3[55] */
+    messageSize = char2int(&publMsg3[6], 1);
+    message = (char*)malloc(messageSize*sizeof(char));
+    for(int i = 0; i < messageSize; i++)
+        message[i] = publMsg3[7 + i];
+
+    return message;
+}
+
+void basicDeliver(int connfd, char* queueName){
+
+}
+
+void basicAck(int connfd){
+    char ack[MAX_CHAR];
+    ssize_t size;
+
+    size = read(connfd, ack, sizeof(ack));
+    if(size == -1)
+        close(connfd);
 }

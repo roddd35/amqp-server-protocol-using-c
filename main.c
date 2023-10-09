@@ -60,6 +60,8 @@ int main (int argc, char **argv) {
     int methodID;
     char methodTxt[MAX_CHAR];
     char* queueName = NULL;
+    char* publishQueue = NULL;
+    char* message = NULL;
     
 
     if (argc != 2) {
@@ -180,7 +182,6 @@ int main (int argc, char **argv) {
                 /* ler qual método deve ser usado */
                 read(connfd, methodTxt, sizeof(methodTxt));
                 methodID = char2int(&methodTxt[9], 2);
-                printf("%d", methodID);
 
                 /* DECLARAR FILA */
                 if(methodID == 10){
@@ -191,14 +192,26 @@ int main (int argc, char **argv) {
                         queueName[i] = (char)methodTxt[14+i];
 
                     /* declarar a fila */
-                    queueName = queueDeclare(connfd, queueNameSize, queueName);
+                    queueDeclare(connfd, queueNameSize, queueName);
                     closeChannel(connfd);
+                    closeChannelOk(connfd);
                     closeConnection(connfd);
                 }   
 
                 /* INSCREVER CONSUMIDOR NA FILA */
                 else if(methodID == 20)
                     basicConsume(connfd, queueName);
+
+                /* PUBLICAR MENSAGEM NA FILA */
+                else if(methodID == 40){
+                    message = (connfd, &publishQueue);
+                    closeChannel(connfd);
+                    basicDeliver(connfd, queueName);
+                    basicAck(connfd);
+                    closeChannelOk(connfd);
+                    closeConnection(connfd);
+                }
+
             }
 
             /*  POSICOES (7, 8) E (9, 10) */

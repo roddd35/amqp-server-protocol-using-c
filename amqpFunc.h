@@ -20,11 +20,15 @@
 
 int readHeader(int connfd);
 int char2int(char* message, int size);
-char* queueDeclare(int connfd, int queueNameSize, char* queueName);
+void basicAck(int connfd);
 void channelOpen(int connfd);
 void closeChannel(int connfd);
+void closeChannelOk(int connfd);
 void connectionTune(int connfd);
 void connectionOpen(int connfd);
 void connectionStart(int connfd);
 void closeConnection(int connfd);
 void basicConsume(int connfd, char* queueName);
+void basicDeliver(int connfd, char* queueName);
+void queueDeclare(int connfd, int queueNameSize, char* queueName);
+char* basicPublish(int connfd, char* queueName);
