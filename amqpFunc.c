@@ -173,19 +173,13 @@ void basicConsume(int connfd, char* queueName){
                   "\x51\x48\x4e\x63\x4a\x36\x64\x45\x59\x31\x77\xce", 44);
 }
 
-char* basicPublish(int connfd, char** queueName){
+char* basicPublish(int connfd, char** queueName, char publMsg1[]){
     int messageSize;
     int queueNameSize;
-    char publMsg1[MAX_CHAR];
     char publMsg2[MAX_CHAR];
     char publMsg3[MAX_CHAR];
     char* message;
     ssize_t size;
-
-
-    size = read(connfd, publMsg1, sizeof(publMsg1));
-    if(size == -1)
-        close(connfd);
 
     /* receber o nome da fila de publicação da mensagem, na primeira mensagem lida */
     queueNameSize = char2int(&publMsg1[14], 1);

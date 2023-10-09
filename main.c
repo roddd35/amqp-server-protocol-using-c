@@ -118,7 +118,7 @@ int main (int argc, char **argv) {
 
                 /* PUBLICAR MENSAGEM NA FILA */
                 else if(methodID == 40){
-                    message = basicPublish(connfd, &publishQueue);
+                    message = basicPublish(connfd, &publishQueue, methodTxt);
                     closeChannel(connfd);
                     basicDeliver(connfd, publishQueue, message);
                     basicAck(connfd);

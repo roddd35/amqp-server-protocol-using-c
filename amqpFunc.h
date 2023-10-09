@@ -28,7 +28,7 @@ void connectionTune(int connfd);
 void connectionOpen(int connfd);
 void connectionStart(int connfd);
 void closeConnection(int connfd);
-void basicConsume(int connfd, char* queueName);
+void basicConsume(int connfd, char* queueName, char publMsg1[]);
 void basicDeliver(int connfd, char* queueName, char* message);
 void queueDeclare(int connfd, int queueNameSize, char* queueName);
 char* basicPublish(int connfd, char** queueName);
