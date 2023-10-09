@@ -173,32 +173,6 @@ void basicConsume(int connfd, char* queueName){
                   "\x51\x48\x4e\x63\x4a\x36\x64\x45\x59\x31\x77\xce", 44);
 }
 
-char* basicPublish(int connfd){
-    int messageSize;
-    char publMsg2[MAX_CHAR];
-    char publMsg3[MAX_CHAR];
-    char* message;
-    ssize_t size;
-
-    /* ler a segunda mensagem */
-    size = read(connfd, publMsg2, sizeof(publMsg2));
-    if(size == -1)
-        close(connfd);
-    
-    /* receber a mensagem a ser publicada */
-    size = read(connfd, publMsg3, sizeof(publMsg3));
-    if(size == -1)
-        close(connfd);
-    
-    /* se tiver que mudar para um unico read, aqui sera &publMsg3[55] */
-    messageSize = char2int(&publMsg3[6], 1);
-    message = (char*)malloc(messageSize*sizeof(char));
-    for(int i = 0; i < messageSize; i++)
-        message[i] = publMsg3[7 + i];
-
-    return message;
-}
-
 void basicDeliver(int connfd, char* queueName, char* message){
     /* definir o tamanho da mensagem e fila e alocar espaço para suas strings */
     uint8_t messageSize = strlen(message);

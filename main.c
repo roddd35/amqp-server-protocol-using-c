@@ -120,7 +120,7 @@ int main (int argc, char **argv) {
                 else if(methodID == 40){
                     /* separar o nome da fila e seu tamanho */
                     int queueNameSize = char2int(&methodTxt[14], 1);
-                    int messageSize = char2int(&methodTxt[121], 1);
+                    int messageSize = char2int(&methodTxt[46 + queueNameSize], 1);
 
                     /* leitura do nome da fila */
                     publishQueue = (char*)malloc(queueNameSize*sizeof(char));
@@ -130,9 +130,8 @@ int main (int argc, char **argv) {
                     /* leitura da mensagem */
                     message = (char*)malloc(messageSize*sizeof(char));
                     for(int i = 0; i < messageSize; i++)
-                        message[i] = methodTxt[122 + i];
-                    /*message = basicPublish(connfd);*/
-                    
+                        message[i] = methodTxt[(47 + queueNameSize) + i];
+
                     closeChannel(connfd);
                     basicDeliver(connfd, publishQueue, message);
                     basicAck(connfd);
