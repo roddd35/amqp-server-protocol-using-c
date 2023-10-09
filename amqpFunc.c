@@ -199,48 +199,51 @@ char* basicPublish(int connfd){
     return message;
 }
 
-void basicDeliver(int connfd, char* queueName, char* message){
-    /* definir o tamanho da mensagem e fila e alocar espaço para suas strings */
+void basicDeliver(int connfd, char* queueName, char* message) {
+    // Defina o tamanho da mensagem e da fila
     uint8_t messageSize = strlen(message);
     uint8_t queueNameSize = strlen(queueName);
-    uint8_t* strFila = malloc(sizeof(uint8_t) * (queueNameSize + 1));
-    uint8_t* strMessage = malloc(sizeof(uint8_t) * (messageSize + 1));
 
-    /* definir as strings de prefixos e sufixos padrões das mensagens */
+    // Aloque espaço para o buffer que conterá todos os dados
+    uint8_t* buffer = malloc(
+        63 + (queueNameSize + 1) + 11 + (messageSize + 1) + 1
+    ); // Tamanho total = 63 bytes (prefixo + sufixo) + tamanho da fila + tamanho da mensagem + terminador nulo
+
+    // Defina as strings de prefixos e sufixos padrões das mensagens
     uint8_t str0[] = {0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x38, 0x00, 0x3c, 0x00, 0x3c, 0x1f, 0x61, 0x6d, 0x71, 0x2e, 0x63, 0x74, 0x61, 0x67, 0x2d, 0x78, 0x51, 0x36, 0x53, 0x73, 0x73, 0x66, 0x7a, 0x67, 0x50, 0x43, 0x51, 0x48, 0x4e, 0x63, 0x4a, 0x36, 0x64, 0x45, 0x59, 0x31, 0x77, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00};
     uint8_t str1[] = {0xce};
     uint8_t str2[] = {0x03, 0x00, 0x01, 0x00, 0x00, 0x00};
 
-    /* definir strings/tamanhos das respostas a serem escritas no write */
-    uint8_t res1[52 + (queueNameSize + 1) + 1];/* tamanho do nome da fila + 1 (byte que indica tamanho do nome da fila) + prefixo + sufixo */
-    uint8_t res2[] = {0x02, 0x00, 0x01, 0x00, 0x00, 0x00, 0x0f, 0x00, 0x3c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x10, 0x00, 0x01, 0xce};
-    uint8_t res3[6 + (messageSize + 1) + 1];    /* tamanho da mensagem + 1 (byte q indica tamanho da msg) + prefixo + sufixo */
-    
-    /* 1 preparar o primeiro trecho da mensagem */
-    strFila[0] = queueNameSize;
-    for(int i = 0; i < queueNameSize; i++)
-        strFila[i + 1] = (uint8_t)queueName[i];
+    // Copie o tamanho da fila e o nome da fila para o buffer
+    buffer[0] = queueNameSize;
+    for (int i = 0; i < queueNameSize; i++) {
+        buffer[i + 1] = (uint8_t)queueName[i];
+    }
 
-    memcpy(res1, str0, sizeof(str0));
-    memcpy(res1 + sizeof(str0), strFila, queueNameSize + 1);
-    memcpy(res1 + sizeof(str0) + queueNameSize + 1, str1, sizeof(str1));
-    
-    /* 2. preparar o ultimo trecho da mensagem */
+    // Copie os prefixos e sufixos padrões das mensagens para o buffer
+    memcpy(buffer + queueNameSize + 1, str0, sizeof(str0));
+    memcpy(buffer + queueNameSize + 1 + sizeof(str0), str1, sizeof(str1));
 
-    strMessage[0] = messageSize;
-    for(int i = 0; i < messageSize; i++)
-        strMessage[i+1] = (uint8_t)message[i];
+    // Escreva a primeira parte da mensagem
+    write(connfd, buffer, queueNameSize + 1 + sizeof(str0) + sizeof(str1));
 
-    memcpy(res3, str2, sizeof(str2));
-    memcpy(res3 + sizeof(str2), strMessage, messageSize + 1);
-    memcpy(res3 + sizeof(str2) + messageSize + 1, str1, sizeof(str1));
+    // Copie o tamanho da mensagem e a mensagem para o buffer
+    buffer[0] = messageSize;
+    for (int i = 0; i < messageSize; i++) {
+        buffer[i + 1] = (uint8_t)message[i];
+    }
 
-    /* concatenar toda a mensagem */
-    memcpy(res1 + sizeof(str0) + queueNameSize + 1 + sizeof(str1), res2, sizeof(res2));
-    memcpy(res1 + sizeof(str0) + queueNameSize + 1 + sizeof(str1) + sizeof(res2), res3, sizeof(res3));
+    // Copie os prefixos e sufixos padrões das mensagens para o buffer
+    memcpy(buffer + messageSize + 1, str2, sizeof(str2));
+    memcpy(buffer + messageSize + 1 + sizeof(str2), str1, sizeof(str1));
 
-    write(connfd, res1, sizeof(res1));
+    // Escreva a segunda parte da mensagem
+    write(connfd, buffer, messageSize + 1 + sizeof(str2) + sizeof(str1));
+
+    // Libere o buffer
+    free(buffer);
 }
+
 
 void basicAck(int connfd){
     char ack[MAX_CHAR];
