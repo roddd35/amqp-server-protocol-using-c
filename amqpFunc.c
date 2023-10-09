@@ -173,6 +173,7 @@ void basicConsume(int connfd, char* queueName){
                   "\x51\x48\x4e\x63\x4a\x36\x64\x45\x59\x31\x77\xce", 44);
 }
 
+
 void basicDeliver(int connfd, char* queueName, char* message){
     /* definir o tamanho da mensagem e fila e alocar espaço para suas strings */
     uint8_t messageSize = strlen(message);
@@ -186,7 +187,7 @@ void basicDeliver(int connfd, char* queueName, char* message){
     uint8_t str2[] = {0x03, 0x00, 0x01, 0x00, 0x00, 0x00};
 
     /* definir strings/tamanhos das respostas a serem escritas no write */
-    uint8_t res1[52 + (queueNameSize + 1) + 1];
+    uint8_t res1[53 + (queueNameSize + 1) + 1];
     uint8_t res2[] = {0x02, 0x00, 0x01, 0x00, 0x00, 0x00, 0x0f, 0x00, 0x3c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x10, 0x00, 0x01, 0xce};
     uint8_t res3[6 + (messageSize + 1) + 1];
     
@@ -194,26 +195,19 @@ void basicDeliver(int connfd, char* queueName, char* message){
     strFila[0] = queueNameSize;
     for(int i = 0; i < queueNameSize; i++)
         strFila[i + 1] = (uint8_t)queueName[i];
-
-    memcpy(res1, str0, sizeof(str0));
-    memcpy(res1 + sizeof(str0), strFila, queueNameSize + 1);
-    memcpy(res1 + sizeof(str0) + queueNameSize + 1, str1, sizeof(str1));
-
-    write(connfd, res1, sizeof(res1));
-    
-    /* 2. write, mensagem padrão, apenas escrever */
-    write(connfd, res2, 23);
-
-    /* 3. write, concatenamos prefixo à mensagem e a um sufixo */
     strMessage[0] = messageSize;
     for(int i = 0; i < messageSize; i++)
         strMessage[i+1] = (uint8_t)message[i];
 
-    memcpy(res3, str2, sizeof(str2));
-    memcpy(res3 + sizeof(str2), strMessage, messageSize + 1);
-    memcpy(res3 + sizeof(str2) + messageSize + 1, str1, sizeof(str1));
+    memcpy(res1, str0, sizeof(str0));
+    memcpy(res1 + sizeof(str0), strFila, queueNameSize + 1);
+    memcpy(res1 + sizeof(str0) + queueNameSize + 1, str1, sizeof(str1));
+    memcpy(res1 + sizeof(str0) + queueNameSize + 1 + sizeof(str1), res2, sizeof(res2));
+    memcpy(res1 + sizeof(str0) + queueNameSize + 1 + sizeof(str1) + sizeof(res2), str2, sizeof(str2));
+    memcpy(res1 + sizeof(str0) + queueNameSize + 1 + sizeof(str1) + sizeof(res2) + sizeof(str2), strMessage, messageSize + 1);
+    memcpy(res1 + sizeof(str0) + queueNameSize + 1 + sizeof(str1) + sizeof(res2) + sizeof(str2) + messageSize + 1, str1, sizeof(str1));
 
-    write(connfd, res3, sizeof(res3));
+    write(connfd, res1, sizeof(res1));
 }
 
 void basicAck(int connfd){
