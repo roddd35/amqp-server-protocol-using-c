@@ -216,7 +216,7 @@ void basicDeliver(int connfd, char* queueName, char* message){
     uint8_t res2[] = {0x02, 0x00, 0x01, 0x00, 0x00, 0x00, 0x0f, 0x00, 0x3c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x10, 0x00, 0x01, 0xce};
     uint8_t res3[6 + (messageSize + 1) + 1];    /* tamanho da mensagem + 1 (byte q indica tamanho da msg) + prefixo + sufixo */
     
-    /* 1. write, concatenamos prefixo ao nome da fila a um sufixo */
+    /* 1 preparar o primeiro trecho da mensagem */
     strFila[0] = queueNameSize;
     for(int i = 0; i < queueNameSize; i++)
         strFila[i + 1] = (uint8_t)queueName[i];
@@ -224,13 +224,9 @@ void basicDeliver(int connfd, char* queueName, char* message){
     memcpy(res1, str0, sizeof(str0));
     memcpy(res1 + sizeof(str0), strFila, queueNameSize + 1);
     memcpy(res1 + sizeof(str0) + queueNameSize + 1, str1, sizeof(str1));
-
-    write(connfd, res1, sizeof(res1));
     
-    /* 2. write, mensagem padrão, apenas escrever */
-    write(connfd, res2, 23);
+    /* 2. preparar o ultimo trecho da mensagem */
 
-    /* 3. write, concatenamos prefixo à mensagem e a um sufixo */
     strMessage[0] = messageSize;
     for(int i = 0; i < messageSize; i++)
         strMessage[i+1] = (uint8_t)message[i];
@@ -239,7 +235,11 @@ void basicDeliver(int connfd, char* queueName, char* message){
     memcpy(res3 + sizeof(str2), strMessage, messageSize + 1);
     memcpy(res3 + sizeof(str2) + messageSize + 1, str1, sizeof(str1));
 
-    write(connfd, res3, sizeof(res3));
+    /* concatenar toda a mensagem */
+    memcpy(res1 + sizeof(str0) + queueNameSize + 1 + sizeof(str1), res2, sizeof(res2));
+    memcpy(res1 + sizeof(str0) + queueNameSize + 1 + sizeof(str1) + sizeof(res2), res3, sizeof(res3));
+
+    write(connfd, res1, sizeof(res1));
 }
 
 void basicAck(int connfd){
