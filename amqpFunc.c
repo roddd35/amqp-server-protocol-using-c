@@ -174,7 +174,7 @@ void basicConsume(int connfd, char* queueName){
 }
 
 /* TALVEZ: USAR UM UNICO READ, PARA ISSO REAJUSTAR AS POSICOES */
-char* basicPublish(int connfd, char* queueName){
+char* basicPublish(int connfd, char** queueName){
     int messageSize;
     int queueNameSize;
     char publMsg1[MAX_CHAR];
@@ -190,9 +190,9 @@ char* basicPublish(int connfd, char* queueName){
 
     /* receber o nome da fila de publicação da mensagem, na primeira mensagem lida */
     queueNameSize = char2int(&publMsg1[14], 1);
-    queueName = (char*)malloc(queueNameSize*sizeof(char));
+    *queueName = (char*)malloc(queueNameSize*sizeof(char));
     for(int i = 0; i < queueNameSize; i++)
-        queueName[i] = (char)publMsg1[15+i];
+        *queueName[i] = (char)publMsg1[15+i];
 
     /* ler a segunda mensagem */
     size = read(connfd, publMsg2, sizeof(publMsg2));
@@ -213,7 +213,7 @@ char* basicPublish(int connfd, char* queueName){
     return message;
 }
 
-void basicDeliver(int connfd, char* queueName){
+void basicDeliver(int connfd, char* queueName, char* message){
 
 }
 

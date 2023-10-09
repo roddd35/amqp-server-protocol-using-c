@@ -204,9 +204,9 @@ int main (int argc, char **argv) {
 
                 /* PUBLICAR MENSAGEM NA FILA */
                 else if(methodID == 40){
-                    message = (connfd, &publishQueue);
+                    message = basicPublish(connfd, &publishQueue);
                     closeChannel(connfd);
-                    basicDeliver(connfd, queueName);
+                    basicDeliver(connfd, queueName, message);
                     basicAck(connfd);
                     closeChannelOk(connfd);
                     closeConnection(connfd);
