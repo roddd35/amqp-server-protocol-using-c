@@ -30,7 +30,7 @@ void connectionTune(int connfd);
 void connectionOpen(int connfd);
 void connectionStart(int connfd);
 void closeConnection(int connfd);
-void basicConsume(int connfd, char* queueName);
+void basicConsumeOk(int connfd, char* queueName, uint8_t* consumerTag);
 void basicDeliver(int connfd, char* queueName, char* message);
 void queueDeclare(int connfd, int queueNameSize, char* queueName);
 

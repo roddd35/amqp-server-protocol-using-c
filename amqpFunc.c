@@ -166,11 +166,15 @@ void closeConnection(int connfd){
     write(connfd, "\x01\x00\x00\x00\x00\x00\x04\x00\x0a\x00\x33\xce", 12);
 }
 
-void basicConsume(int connfd, char* queueName){
+void basicConsumeOk(int connfd, char* queueName, uint8_t* consumerTag){
+    uint8_t str1[12] = {0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x24, 0x00, 0x3c, 0x00, 0x15, 0x1f};
+    uint8_t strMessage[44];
+
+    memcpy(strMessage, str1, sizeof(str1));
+    memcpy(strMessage + sizeof(str1), consumerTag, 32);
+    
     /* escrever o consume-ok */
-    write(connfd, "\x01\x00\x01\x00\x00\x00\x24\x00\x3c\x00\x15\x1f\x61\x6d\x71\x2e" \
-                  "\x63\x74\x61\x67\x2d\x78\x51\x36\x53\x73\x73\x66\x7a\x67\x50\x43" \
-                  "\x51\x48\x4e\x63\x4a\x36\x64\x45\x59\x31\x77\xce", 44);
+    write(connfd, strMessage, 44);
 }
 
 void basicDeliver(int connfd, char* queueName, char* message){

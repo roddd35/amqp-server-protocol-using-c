@@ -43,8 +43,20 @@ void* connection(void* arg){
         }   
 
         /* INSCREVER CONSUMIDOR NA FILA */
-        else if(methodID == 20)
-            basicConsume(connfd, queueName);
+        else if(methodID == 20){
+            /* gerar uma consumer-tag pro write */
+            uint8_t* consumerTag = malloc(sizeof(uint8_t) * 32);
+            memcpy(consumerTag, "amq.ctag-", 9);
+            
+            for (int i = 9; i < 31; i++)
+                consumerTag[i] = rand() % 26 + 'a'; // gera aleatório em [a-z]
+            consumerTag[31] = '\xce';
+    
+            
+            /* fazer o mkfifo ou eventfd */
+            basicDeliver(connfd, publishQueue, message);
+            basicConsumeOk(connfd, queueName, consumerTag);
+        }
 
         /* PUBLICAR MENSAGEM NA FILA */
         else if(methodID == 40){
@@ -63,7 +75,7 @@ void* connection(void* arg){
                 message[i] = methodTxt[(47 + queueNameSize) + i];
 
             closeChannel(connfd);
-            basicDeliver(connfd, publishQueue, message);
+            /* basicDeliver(connfd, publishQueue, message); */
             basicAck(connfd);
             closeChannelOk(connfd);
             closeConnection(connfd);

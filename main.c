@@ -58,7 +58,7 @@ int main (int argc, char **argv) {
         }
       
         /* struct para utilizar threads, ao invés de FORk */
-        struct ThreadArgs *args = (struct ThreadArgs *)malloc(sizeof(struct ThreadArgs));
+        struct ThreadArgs* args = (struct ThreadArgs*)malloc(sizeof(struct ThreadArgs));
         if (args == NULL) {
             perror("Falha na alocação de memória\n");
             close(connfd);
@@ -69,9 +69,10 @@ int main (int argc, char **argv) {
         /* chamar a função connection e incrementar uma thread a cada nova conexão */
         if ((childpid = pthread_create(&threads[t], NULL, connection, args)) == 0)
             t++;
-        else
+        else{
             printf("Não foi possível criar a thread!\n");
             close(connfd);
+        }
     }
     close(listenfd);
     exit(0);
