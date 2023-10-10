@@ -45,13 +45,17 @@ void* connection(void* arg){
         /* INSCREVER CONSUMIDOR NA FILA */
         else if(methodID == 20){
             /* gerar uma consumer-tag pro write */
-            uint8_t* consumerTag = malloc(sizeof(uint8_t) * 32);
-            memcpy(consumerTag, "amq.ctag-", 9);
+            uint8_t consumerTag[32];
             
-            for (int i = 9; i < 31; i++)
-                consumerTag[i] = rand() % 26 + 'a'; // gera aleatório em [a-z]
+            for (int i = 9; i < 31; i++) {
+                consumerTag[i] = rand() % 26 + 'a'; // Gera um caractere aleatório de 'a' a 'z'
+            }
             consumerTag[31] = '\xce';
+
+            // Formate a consumer tag completa no vetor
+            snprintf((char*)consumerTag, size, "amq.ctag-%s", (char*)&consumerTag[9]);
     
+            printf("%s", consumerTag);
             
             /* fazer o mkfifo ou eventfd */
             basicDeliver(connfd, publishQueue, message);
