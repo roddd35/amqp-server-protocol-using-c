@@ -190,7 +190,7 @@ void basicDeliver(int connfd, char* queueName, char* message){
     uint8_t res2[] = {0x02, 0x00, 0x01, 0x00, 0x00, 0x00, 0x0f, 0x00, 0x3c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x10, 0x00, 0x01, 0xce};
     uint8_t res3[6 + (messageSize + 1) + 1];
     
-    /* 1. write, concatenamos prefixo ao nome da fila a um sufixo */
+    /* 1. frame */
     strFila[0] = queueNameSize;
     for(int i = 0; i < queueNameSize; i++)
         strFila[i + 1] = (uint8_t)queueName[i];
@@ -201,10 +201,10 @@ void basicDeliver(int connfd, char* queueName, char* message){
 
     write(connfd, res1, sizeof(res1));
     
-    /* 2. write, mensagem padrão, apenas escrever */
+    /* 2. frame, contem o content-header */
     write(connfd, res2, 23);
 
-    /* 3. write, concatenamos prefixo à mensagem e a um sufixo */
+    /* 3. frame, contem o content-body */
     strMessage[0] = messageSize;
     for(int i = 0; i < messageSize; i++)
         strMessage[i+1] = (uint8_t)message[i];
@@ -224,4 +224,3 @@ void basicAck(int connfd){
     if(size == -1)
         close(connfd);
 }
-

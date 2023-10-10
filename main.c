@@ -8,22 +8,16 @@
 */
 
 #include "amqpFunc.h"
+#include "connection.h"
 
 int main (int argc, char **argv) {
     /* Os sockets. */
     int listenfd, connfd;
-
-    /* Informações sobre o socket (endereço e porta) ficam nesta struct */
     struct sockaddr_in servaddr;
-
-    /* Retorno da função fork */
     pid_t childpid;
-    
-    int methodID;
-    char methodTxt[MAX_CHAR];
-    char* queueName = NULL;
-    char* publishQueue = NULL;
-    char* message = NULL;
+
+    pthread_t threads[qtdTHREADS];
+    long long int t = 0;
     
 
     if (argc != 2) {
@@ -58,102 +52,27 @@ int main (int argc, char **argv) {
     printf("[Para finalizar, pressione CTRL+c ou rode um kill ou killall]\n");
    
 	for (;;) {
-        /* O socket inicial que foi criado é o socket que vai aguardar
-         * pela conexão na porta especificada. Mas pode ser que existam
-         * diversos clientes conectando no servidor. Por isso deve-se
-         * utilizar a função accept. Esta função vai retirar uma conexão
-         * da fila de conexões que foram aceitas no socket listenfd e
-         * vai criar um socket específico para esta conexão. O descritor
-         * deste novo socket é o retorno da função accept.
-         */
         if ((connfd = accept(listenfd, (struct sockaddr *) NULL, NULL)) == -1 ) {
             perror("accept :(\n");
             exit(5);
         }
       
-        if ((childpid = fork()) == 0) {
-            /**** PROCESSO FILHO ****/
-            printf("[Uma conexão aberta]\n");
-
-            close(listenfd);
-
-            /* ========================================================= */
-            /* ========================================================= */
-            /*                         EP1 INÍCIO                        */
-            /* ========================================================= */
-            /* ========================================================= */
-            /* TODO: É esta parte do código que terá que ser modificada
-             * para que este servidor consiga interpretar comandos AMQP  */
-
-            /* declarar uma fila */
-            if(readHeader(connfd)){
-                /* iniciar conexão e dependências */
-                connectionStart(connfd);
-                connectionTune(connfd);
-                connectionOpen(connfd);
-                channelOpen(connfd);
-
-                /* ler qual método deve ser usado */
-                read(connfd, methodTxt, sizeof(methodTxt));
-                methodID = char2int(&methodTxt[9], 2);
-
-                /* DECLARAR FILA */
-                if(methodID == 10){
-                    /* receber o tamanho e nome da fila declarada */
-                    int queueNameSize = char2int(&methodTxt[13], 1);
-                    queueName = (char*)malloc(queueNameSize*sizeof(char));
-                    for(int i = 0; i < queueNameSize; i++)
-                        queueName[i] = (char)methodTxt[14+i];
-
-                    /* declarar a fila */
-                    queueDeclare(connfd, queueNameSize, queueName);
-                    closeChannel(connfd);
-                    closeChannelOk(connfd);
-                    closeConnection(connfd);
-                }   
-
-                /* INSCREVER CONSUMIDOR NA FILA */
-                else if(methodID == 20)
-                    basicConsume(connfd, queueName);
-
-                /* PUBLICAR MENSAGEM NA FILA */
-                else if(methodID == 40){
-                    /* separar o nome da fila e seu tamanho */
-                    int queueNameSize = char2int(&methodTxt[14], 1);
-                    int messageSize = char2int(&methodTxt[46 + queueNameSize], 1);
-
-                    /* leitura do nome da fila */
-                    publishQueue = (char*)malloc(queueNameSize*sizeof(char));
-                    for(int i = 0; i < queueNameSize; i++)
-                        publishQueue[i] = (char)methodTxt[15+i];
-
-                    /* leitura da mensagem */
-                    message = (char*)malloc(messageSize*sizeof(char));
-                    for(int i = 0; i < messageSize; i++)
-                        message[i] = methodTxt[(47 + queueNameSize) + i];
-
-                    closeChannel(connfd);
-                    basicDeliver(connfd, publishQueue, message);
-                    basicAck(connfd);
-                    closeChannelOk(connfd);
-                    closeConnection(connfd);
-                }
-
-            }
-
-            /* ========================================================= */
-            /* ========================================================= */
-            /*                         EP1 FIM                           */
-            /* ========================================================= */
-            /* ========================================================= */
-
-            /* Finalizar o processo filho */
-            printf("[Uma conexão fechada]\n");
-            exit(0);
+        /* struct para utilizar threads, ao invés de FORk */
+        struct ThreadArgs *args = (struct ThreadArgs *)malloc(sizeof(struct ThreadArgs));
+        if (args == NULL) {
+            perror("Falha na alocação de memória\n");
+            close(connfd);
+            continue;
         }
+        args->connfd = connfd;
+
+        /* chamar a função connection e incrementar uma thread a cada nova conexão */
+        if ((childpid = pthread_create(&threads[t], NULL, connection, args)) == 0)
+            t++;
         else
-            /**** PROCESSO PAI ****/            
+            printf("Não foi possível criar a thread!\n");
             close(connfd);
     }
+    close(listenfd);
     exit(0);
 }

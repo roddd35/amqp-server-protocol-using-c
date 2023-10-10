@@ -4,6 +4,7 @@
 #define LISTENQ 1
 #define MAXLINE 4096
 #define MAX_CHAR 1024
+#define qtdTHREADS 150
 #define MAXDATASIZE 100
 
 #include <time.h>
@@ -13,6 +14,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <pthread.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -31,3 +33,7 @@ void closeConnection(int connfd);
 void basicConsume(int connfd, char* queueName);
 void basicDeliver(int connfd, char* queueName, char* message);
 void queueDeclare(int connfd, int queueNameSize, char* queueName);
+
+struct ThreadArgs {
+    int connfd;
+};
