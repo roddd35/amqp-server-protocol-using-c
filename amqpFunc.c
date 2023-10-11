@@ -166,15 +166,12 @@ void closeConnection(int connfd){
     write(connfd, "\x01\x00\x00\x00\x00\x00\x04\x00\x0a\x00\x33\xce", 12);
 }
 
-void basicConsumeOk(int connfd, char* queueName, uint8_t* consumerTag){
-    uint8_t str1[12] = {0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x24, 0x00, 0x3c, 0x00, 0x15, 0x1f};
-    uint8_t strMessage[44];
-
-    memcpy(strMessage, str1, sizeof(str1));
-    memcpy(strMessage + sizeof(str1), consumerTag, 32);
-    
+void basicConsume(int connfd, char* queueName, uint8_t* consumerTag){
     /* escrever o consume-ok */
-    write(connfd, strMessage, 44);
+    /* \x01\x00\x01\x00\x00\x00\x24\x00\x3c\x00\x15\x1f, consumerTag */
+    write(connfd, "\x01\x00\x01\x00\x00\x00\x24\x00\x3c\x00\x15\x1f\x61\x6d\x71\x2e" \
+                  "\x63\x74\x61\x67\x2d\x78\x51\x36\x53\x73\x73\x66\x7a\x67\x50\x43" \
+                  "\x51\x48\x4e\x63\x4a\x36\x64\x45\x59\x31\x77\xce", 44);
 }
 
 void basicDeliver(int connfd, char* queueName, char* message){
@@ -227,4 +224,21 @@ void basicAck(int connfd){
     size = read(connfd, ack, sizeof(ack));
     if(size == -1)
         close(connfd);
+}
+
+uint8_t* generateCTAG(){
+    uint8_t str1[] = {0x1f, 0x61, 0x6d, 0x71, 0x2e, 0x63, 0x74, 0x61, 0x67, 0x2d};
+    uint8_t str2[] = {0xce};
+    uint8_t* ctag = (uint8_t*)malloc(sizeof(uint8_t) * 33);
+    uint8_t* ctagDigits = (uint8_t*)malloc(sizeof(uint8_t) * 22);
+
+    srand(time(NULL));
+    for(int i = 0; i < 22; i++)
+        ctagDigits[i] = 65 + (rand() % 122 - 65); /* gerar uma letra, maiuscula ou minuscula, aleatoria */
+
+    memcpy(ctag, str1, sizeof(str1));
+    memcpy(ctag + sizeof(str1), ctagDigits, 22);
+    memcpy(ctag + sizeof(str1) + 22, str2, sizeof(str2));
+
+    return ctag;
 }

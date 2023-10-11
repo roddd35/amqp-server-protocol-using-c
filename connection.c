@@ -44,22 +44,17 @@ void* connection(void* arg){
 
         /* INSCREVER CONSUMIDOR NA FILA */
         else if(methodID == 20){
-            /* gerar uma consumer-tag pro write */
-            uint8_t consumerTag[32];
-            
-            for (int i = 9; i < 31; i++) {
-                consumerTag[i] = rand() % 26 + 'a'; // Gera um caractere aleatório de 'a' a 'z'
-            }
-            consumerTag[31] = '\xce';
-
-            // Formate a consumer tag completa no vetor
-            snprintf((char*)consumerTag, size, "amq.ctag-%s", (char*)&consumerTag[9]);
-    
-            printf("%s", consumerTag);
-            
+            /* verificar se precisa gerar um consumer-tag 
+                para fazer isso: vetor uint8_t[] = {prefixo}
+                                 vetor char[] = "amq.ctag-"
+                                 uint8_t = '\xce'
+                                 fazer um for para preencher o vetor uint8 com os digitos do vetor char com cast
+            */
             /* fazer o mkfifo ou eventfd */
-            basicDeliver(connfd, publishQueue, message);
-            basicConsumeOk(connfd, queueName, consumerTag);
+            uint8_t* ctag = generateCTAG();
+            printf("%s\n", ctag);
+
+            basicConsume(connfd, queueName, ctag);
         }
 
         /* PUBLICAR MENSAGEM NA FILA */
@@ -79,7 +74,7 @@ void* connection(void* arg){
                 message[i] = methodTxt[(47 + queueNameSize) + i];
 
             closeChannel(connfd);
-            /* basicDeliver(connfd, publishQueue, message); */
+            basicDeliver(connfd, publishQueue, message);
             basicAck(connfd);
             closeChannelOk(connfd);
             closeConnection(connfd);
