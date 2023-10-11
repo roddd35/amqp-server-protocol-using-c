@@ -44,17 +44,11 @@ void* connection(void* arg){
 
         /* INSCREVER CONSUMIDOR NA FILA */
         else if(methodID == 20){
-            /* verificar se precisa gerar um consumer-tag 
-                para fazer isso: vetor uint8_t[] = {prefixo}
-                                 vetor char[] = "amq.ctag-"
-                                 uint8_t = '\xce'
-                                 fazer um for para preencher o vetor uint8 com os digitos do vetor char com cast
-            */
             /* fazer o mkfifo ou eventfd */
             uint8_t* ctag = generateCTAG();
-            printf("%s\n", ctag);
+            /* printf("%s\n", ctag); */
 
-            basicConsume(connfd, queueName, ctag);
+            basicConsume(connfd, ctag);
         }
 
         /* PUBLICAR MENSAGEM NA FILA */
