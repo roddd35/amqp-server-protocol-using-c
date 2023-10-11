@@ -65,7 +65,7 @@ void* connection(void* arg){
             /* leitura da mensagem */
             message = (char*)malloc(messageSize*sizeof(char));
             for(int i = 0; i < messageSize; i++)
-                message[i] = methodTxt[(47 + queueNameSize) + i];
+                message[i] = (char)methodTxt[(47 + queueNameSize) + i];
 
             closeChannel(connfd);
             basicDeliver(connfd, publishQueue, message);
