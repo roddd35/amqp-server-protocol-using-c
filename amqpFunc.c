@@ -168,16 +168,90 @@ void closeConnection(int connfd){
 
 void basicConsume(int connfd, uint8_t* consumerTag){
     /* escrever o consume-ok */
-    uint8_t* res = (uint8_t*)malloc(sizeof(uint8_t) * 44);
+    uint8_t res[44];
     uint8_t str1[] = {0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x24, 0x00, 0x3c, 0x00, 0x15};
 
     memcpy(res, str1, sizeof(str1));
     memcpy(res + sizeof(str1), consumerTag, 33);
 
+    write(connfd, res, 44);
+}
+
+/* obs: no str0, muda a consumer-tag, ver se precisa lidar com isso */
+void basicDeliver(int connfd, char* queueName, char* message){
+    /* definir o tamanho da mensagem e fila e alocar espaço para suas strings */
+    uint8_t messageSize = strlen(message);
+    uint8_t queueNameSize = strlen(queueName);
+    uint8_t* strFila = malloc(sizeof(uint8_t) * (queueNameSize + 1));
+    uint8_t* strMessage = malloc(sizeof(uint8_t) * (messageSize + 1));
+
+    /* definir as strings de prefixos e sufixos padrões das mensagens */
+    uint8_t str0[] = {0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x38, 0x00, 0x3c, 0x00, 0x3c, 0x1f, 0x61, 0x6d, 0x71, 0x2e, 0x63, 0x74, 0x61, 0x67, 0x2d, 0x78, 0x51, 0x36, 0x53, 0x73, 0x73, 0x66, 0x7a, 0x67, 0x50, 0x43, 0x51, 0x48, 0x4e, 0x63, 0x4a, 0x36, 0x64, 0x45, 0x59, 0x31, 0x77, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00};
+    uint8_t str1[] = {0xce};
+    uint8_t str2[] = {0x02, 0x00, 0x01, 0x00, 0x00, 0x00, 0x0f, 0x00, 0x3c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x10, 0x00, 0x01, 0xce};
+    uint8_t str3[] = {0x03, 0x00, 0x01, 0x00, 0x00, 0x00};
+
+    /* definir a string que será levada como resposta */
+    uint8_t res[88 + queueNameSize + messageSize];
+    
+    /* formar as strings com a mensagem e o nome da fila */
+    strFila[0] = queueNameSize;
+    for(int i = 0; i < queueNameSize; i++)
+        strFila[i + 1] = (uint8_t)queueName[i];
+
+    strMessage[0] = messageSize;
+    for(int i = 0; i < messageSize; i++)
+        strMessage[i+1] = (uint8_t)message[i];
+
+    /* concatenar todos trechos da mensagem para dar write */
+    /* 1. frame */
+    memcpy(res, str0, sizeof(str0));
+    memcpy(res + sizeof(str0), strFila, queueNameSize + 1);
+    memcpy(res + sizeof(str0) + queueNameSize + 1, str1, sizeof(str1));
+
+    /* 2. frame */
+    memcpy(res + sizeof(str0) + queueNameSize + 1 + sizeof(str1), str2, sizeof(str2));
+
+    /* 3. frame */
+    memcpy(res + sizeof(str0) + queueNameSize + 1 + sizeof(str1) + sizeof(str2), str3, sizeof(str3));
+    memcpy(res + sizeof(str0) + queueNameSize + 1 + sizeof(str1) + sizeof(str2) + sizeof(str3), strMessage, messageSize + 1);
+    memcpy(res + sizeof(str0) + queueNameSize + 1 + sizeof(str1) + sizeof(str2) + sizeof(str3) + messageSize + 1, str1, sizeof(str1));
+
+    /* escrever resposta */
     write(connfd, res, sizeof(res));
 }
 
-void basicDeliver(int connfd, char* queueName, char* message){
+void basicAck(int connfd){
+    char ack[MAX_CHAR];
+    ssize_t size;
+
+    size = read(connfd, ack, sizeof(ack));
+    if(size == -1)
+        close(connfd);
+}
+
+uint8_t* generateCTAG(){
+    uint8_t str1[] = {0x1f, 0x61, 0x6d, 0x71, 0x2e, 0x63, 0x74, 0x61, 0x67, 0x2d};
+    uint8_t str2[] = {0xce};
+    uint8_t* ctag = (uint8_t*)malloc(sizeof(uint8_t) * 33);
+    uint8_t* ctagDigits = (uint8_t*)malloc(sizeof(uint8_t) * 22);
+
+    srand(time(NULL));
+    for(int i = 0; i < 22; i++){
+        if(rand() % 2 == 0)
+            ctagDigits[i] = rand() % 26 + 'a';
+        else
+            ctagDigits[i] = rand() % 26 + 'A';
+    }
+
+    memcpy(ctag, str1, sizeof(str1));
+    memcpy(ctag + sizeof(str1), ctagDigits, 22);
+    memcpy(ctag + sizeof(str1) + 22, str2, sizeof(str2));
+
+    return ctag;
+}
+
+void basicDeliverBACKUP(int connfd, char* queueName, char* message){
     /* definir o tamanho da mensagem e fila e alocar espaço para suas strings */
     uint8_t messageSize = strlen(message);
     uint8_t queueNameSize = strlen(queueName);
@@ -218,34 +292,4 @@ void basicDeliver(int connfd, char* queueName, char* message){
     memcpy(res3 + sizeof(str2) + messageSize + 1, str1, sizeof(str1));
 
     write(connfd, res3, sizeof(res3));
-}
-
-void basicAck(int connfd){
-    char ack[MAX_CHAR];
-    ssize_t size;
-
-    size = read(connfd, ack, sizeof(ack));
-    if(size == -1)
-        close(connfd);
-}
-
-uint8_t* generateCTAG(){
-    uint8_t str1[] = {0x1f, 0x61, 0x6d, 0x71, 0x2e, 0x63, 0x74, 0x61, 0x67, 0x2d};
-    uint8_t str2[] = {0xce};
-    uint8_t* ctag = (uint8_t*)malloc(sizeof(uint8_t) * 33);
-    uint8_t* ctagDigits = (uint8_t*)malloc(sizeof(uint8_t) * 22);
-
-    srand(time(NULL));
-    for(int i = 0; i < 22; i++){
-        if(rand() % 2 == 0)
-            ctagDigits[i] = rand() % 26 + 'a';
-        else
-            ctagDigits[i] = rand() % 26 + 'A';
-    }
-
-    memcpy(ctag, str1, sizeof(str1));
-    memcpy(ctag + sizeof(str1), ctagDigits, 22);
-    memcpy(ctag + sizeof(str1) + 22, str2, sizeof(str2));
-
-    return ctag;
 }
