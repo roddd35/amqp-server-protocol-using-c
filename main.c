@@ -62,7 +62,7 @@ int main (int argc, char **argv) {
     
     /* reservamos espaço para 16 filas, como pedido para o protocolo */
     args->size = 0;
-    args->queueList = (uint8_t**)malloc(sizeof(uint8_t*) * 16);
+    args->queueList = (char**)malloc(sizeof(char*) * 16);
     for(int i = 0; i < 16; i++)
         args->queueList[i] = NULL;
 

@@ -245,3 +245,11 @@ uint8_t* generateCTAG(){
 
     return ctag;
 }
+
+struct ThreadArgs* armazenaFila(char* queueName, int queueNameSize, struct ThreadArgs* args){
+    args->queueList[args->size] = (char*)malloc(sizeof(char) * (queueNameSize));
+    args->queueList[args->size] = queueName;
+    args->size++;
+
+    return args;
+}

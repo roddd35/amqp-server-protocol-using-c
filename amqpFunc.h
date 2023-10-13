@@ -33,10 +33,11 @@ void closeConnection(int connfd);
 void basicConsume(int connfd, uint8_t* consumerTag);
 void basicDeliver(int connfd, char* queueName, char* message);
 void queueDeclare(int connfd, int queueNameSize, char* queueName);
+struct ThreadArgs* armazenaFila(char* queueName, int queueNameSize, struct ThreadArgs* args);
 uint8_t* generateCTAG();
 
 struct ThreadArgs {
     int connfd;
     int size;
-    uint8_t** queueList;
+    char** queueList;
 };
