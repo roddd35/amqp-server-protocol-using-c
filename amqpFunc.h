@@ -37,4 +37,6 @@ uint8_t* generateCTAG();
 
 struct ThreadArgs {
     int connfd;
+    int size;
+    uint8_t** queueList;
 };

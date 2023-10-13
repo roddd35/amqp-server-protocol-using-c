@@ -12,7 +12,8 @@
 
 int main (int argc, char **argv) {
     /* Os sockets. */
-    int listenfd, connfd;
+    int listenfd;
+    int connfd;
     struct sockaddr_in servaddr;
     pid_t childpid;
 
@@ -51,22 +52,29 @@ int main (int argc, char **argv) {
     printf("[Servidor no ar. Aguardando conexões na porta %s]\n",argv[1]);
     printf("[Para finalizar, pressione CTRL+c ou rode um kill ou killall]\n");
    
+    /* struct para utilizar threads, ao invés de FORk */
+    struct ThreadArgs* args = (struct ThreadArgs*)malloc(sizeof(struct ThreadArgs));
+    if (args == NULL){
+        perror("Falha na alocação de memória\n");
+        exit(1);
+    }
+    
+    
+    /* reservamos espaço para 16 filas, como pedido para o protocolo */
+    args->size = 0;
+    args->queueList = (uint8_t**)malloc(sizeof(uint8_t*) * 16);
+    for(int i = 0; i < 16; i++)
+        args->queueList[i] = NULL;
+
+    /* o servidor roda nesse loop */
 	for (;;) {
         if ((connfd = accept(listenfd, (struct sockaddr *) NULL, NULL)) == -1 ) {
             perror("accept :(\n");
             exit(5);
         }
-      
-        /* struct para utilizar threads, ao invés de FORk */
-        struct ThreadArgs* args = (struct ThreadArgs*)malloc(sizeof(struct ThreadArgs));
-        if (args == NULL) {
-            perror("Falha na alocação de memória\n");
-            close(connfd);
-            continue;
-        }
-        args->connfd = connfd;
 
         /* chamar a função connection e incrementar uma thread a cada nova conexão */
+        args->connfd = connfd;
         if ((childpid = pthread_create(&threads[t], NULL, connection, args)) == 0)
             t++;
         else{
