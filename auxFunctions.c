@@ -40,6 +40,7 @@ No* iniciarLista(No* listaFilas){
     listaFilas->nomeFila = NULL;
     listaFilas->listaSockets = (int*)malloc(sizeof(int) * 16);
     listaFilas->qtdSockets = 0;
+    listaFilas->maxConsumers = 16;
 
     return listaFilas;
 }
@@ -50,7 +51,7 @@ No* adicionaFila(No* listaFilas, No* primeiroLista, char* queueName, int connfd)
         listaFilas->nomeFila = queueName;
         listaFilas->listaSockets[0] = connfd;
         listaFilas->qtdSockets = 1;
-        iniciarLista(listaFilas->prox);
+        listaFilas->prox = iniciarLista(listaFilas->prox);
         return primeiroLista;
     }
 
@@ -58,12 +59,29 @@ No* adicionaFila(No* listaFilas, No* primeiroLista, char* queueName, int connfd)
     else if(strcmp(listaFilas->nomeFila, queueName) == 0){
         listaFilas->listaSockets[listaFilas->qtdSockets] = connfd;
         listaFilas->qtdSockets++;
+        if(listaFilas->qtdSockets == listaFilas->maxConsumers)
+            listaFilas = realocaEspaco(listaFilas);
         return primeiroLista;
     }
 
     /* procura por uma fila de mesmo nome ou ate encontrar uma vazia */
     else
         return adicionaFila(listaFilas->prox, primeiroLista, queueName, connfd);
+}
+
+No* realocaEspaco(No* listaFilas){
+    No* aux = NULL;
+    aux = iniciarLista(aux);
+    aux->maxConsumers = 2 * listaFilas->maxConsumers;
+    aux->nomeFila = listaFilas->nomeFila;
+    aux->prox = listaFilas->prox;
+    aux->qtdSockets = listaFilas->qtdSockets;
+    aux->listaSockets = (int*)malloc(sizeof(int) * aux->maxConsumers);
+    for(int i = 0; i < aux->qtdSockets; i++)
+        aux->listaSockets[i] = listaFilas->listaSockets[i];
+
+    /*free(listaFilas);*/
+    return aux;
 }
 
 void imprimeFilas(No* listaFilas){
