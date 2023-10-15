@@ -21,7 +21,6 @@
 #include <sys/socket.h>
 
 int readHeader(int connfd);
-int char2int(char* message, int size);
 void basicAck(int connfd);
 void channelOpen(int connfd);
 void closeChannel(int connfd);
@@ -33,11 +32,7 @@ void closeConnection(int connfd);
 void basicConsume(int connfd, uint8_t* consumerTag);
 void basicDeliver(int connfd, char* queueName, char* message);
 void queueDeclare(int connfd, int queueNameSize, char* queueName);
-struct ThreadArgs* armazenaFila(char* queueName, int queueNameSize, struct ThreadArgs* args);
-uint8_t* generateCTAG();
 
 struct ThreadArgs {
     int connfd;
-    int size;
-    char** queueList;
 };

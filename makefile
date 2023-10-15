@@ -1,10 +1,10 @@
 CC=gcc
 CFLAGS= -Wall -g
-OTHERS= amqpFunc.c connection.c
+OTHERS= amqpFunc.c connection.c auxFunctions.c
 
 ################################
 
-OBJS=amqpFunc.o connection.o
+OBJS=amqpFunc.o connection.o auxFunctions.o
 MAIN=main.c
 
 ################################
@@ -15,6 +15,7 @@ all: ep
 
 amqpFunc.o: amqpFunc.h
 connection.o: connection.h
+auxFunctions.o: auxFunctions.h
 ep3.o: main.c
 
 ep: ${OBJS} 

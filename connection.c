@@ -1,7 +1,8 @@
 #include "amqpFunc.h"
 #include "connection.h"
+#include "auxFunctions.h"
 
-void* connection(void* arg){
+void* threadConnection(void* arg){
     struct ThreadArgs* args = (struct ThreadArgs*)arg;
     int connfd = args->connfd;
 
@@ -35,9 +36,6 @@ void* connection(void* arg){
             for(int i = 0; i < queueNameSize; i++)
                 queueName[i] = (char)methodTxt[14+i];
 
-            armazenaFila(queueName, queueNameSize, args);
-            printf("%d %s", args->size, args->queueList[size-1]);
-            
             /* declarar a fila */
             queueDeclare(connfd, queueNameSize, queueName);
             closeChannel(connfd);
