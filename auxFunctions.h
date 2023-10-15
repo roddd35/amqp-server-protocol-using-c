@@ -10,7 +10,7 @@ typedef struct cel{
 }No;
 
 uint8_t* generateCTAG();
-void iniciarLista(No* listaFilas);
 void imprimeFilas(No* listaFilas);
-void adicionaFila(No* listaFilas, char* queueName, int connfd);
 int char2int(char* message, int size);
+No* iniciarLista(No* listaFilas);
+No* adicionaFila(No* listaFilas, No* primeiroLista, char* queueName, int connfd);

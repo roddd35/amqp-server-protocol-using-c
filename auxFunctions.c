@@ -34,33 +34,36 @@ uint8_t* generateCTAG(){
 }
 
 /* iniciamos permitindo 16 clientes em uma fila */
-void iniciarLista(No* listaFilas){
+No* iniciarLista(No* listaFilas){
+    listaFilas = (No*)malloc(sizeof(No));
     listaFilas->prox = NULL;
     listaFilas->nomeFila = NULL;
     listaFilas->listaSockets = (int*)malloc(sizeof(int) * 16);
     listaFilas->qtdSockets = 0;
+
+    return listaFilas;
 }
 
-void adicionaFila(No* listaFilas, char* queueName, int connfd){
+No* adicionaFila(No* listaFilas, No* primeiroLista, char* queueName, int connfd){
     /* encontrou um nó vazio, preenche as informações */
     if(listaFilas->nomeFila == NULL){
         listaFilas->nomeFila = queueName;
         listaFilas->listaSockets[0] = connfd;
         listaFilas->qtdSockets = 1;
-        listaFilas->prox = NULL;
-        return;
+        iniciarLista(listaFilas->prox);
+        return primeiroLista;
     }
 
     /* encontrou a fila com mesmo nome */
     else if(strcmp(listaFilas->nomeFila, queueName) == 0){
         listaFilas->listaSockets[listaFilas->qtdSockets] = connfd;
         listaFilas->qtdSockets++;
-        return;
+        return primeiroLista;
     }
 
     /* procura por uma fila de mesmo nome ou ate encontrar uma vazia */
     else
-        adicionaFila(listaFilas->prox, queueName, connfd);
+        return adicionaFila(listaFilas->prox, primeiroLista, queueName, connfd);
 }
 
 void imprimeFilas(No* listaFilas){

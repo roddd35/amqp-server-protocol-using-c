@@ -55,7 +55,7 @@ int main (int argc, char **argv) {
     printf("[Servidor no ar. Aguardando conexões na porta %s]\n",argv[1]);
     printf("[Para finalizar, pressione CTRL+c ou rode um kill ou killall]\n");
    
-    iniciarLista(listaFilas);
+    listaFilas = iniciarLista(listaFilas);
 
 	for (;;) {
         if ((connfd = accept(listenfd, (struct sockaddr *) NULL, NULL)) == -1 ) {
@@ -119,8 +119,8 @@ void* threadConnection(void* arg){
                 queueName[i] = (char)methodTxt[14+i];
 
             /* registrar a fila na lista de filas */
-            adicionaFila(listaFilas, queueName, connfd);
-            imprimeFilas(listaFilas);
+            listaFilas = adicionaFila(listaFilas, listaFilas, queueName, connfd);
+            /* imprimeFilas(listaFilas); */
 
             /* declarar a fila */
             queueDeclare(connfd, queueNameSize, queueName);
