@@ -12,6 +12,14 @@ int char2int(char* message, int size){
     return valor;
 }
 
+int existeFila(No* listaFilas, char* queueName){
+    if(strcmp(listaFilas->nomeFila, queueName) == 0)
+        return 1;
+    else if(listaFilas->prox == NULL)
+        return 0;
+    else return existeFila(listaFilas->prox, queueName);
+}
+
 uint8_t* generateCTAG(){
     uint8_t str1[] = {0x1f, 0x61, 0x6d, 0x71, 0x2e, 0x63, 0x74, 0x61, 0x67, 0x2d};
     uint8_t str2[] = {0xce};
@@ -70,18 +78,17 @@ No* adicionaFila(No* listaFilas, No* primeiroLista, char* queueName, int connfd)
 }
 
 No* realocaEspaco(No* listaFilas){
-    No* aux = NULL;
-    aux = iniciarLista(aux);
-    aux->maxConsumers = 2 * listaFilas->maxConsumers;
-    aux->nomeFila = listaFilas->nomeFila;
-    aux->prox = listaFilas->prox;
-    aux->qtdSockets = listaFilas->qtdSockets;
-    aux->listaSockets = (int*)malloc(sizeof(int) * aux->maxConsumers);
-    for(int i = 0; i < aux->qtdSockets; i++)
-        aux->listaSockets[i] = listaFilas->listaSockets[i];
+    int* aux;
+    aux = (int*)malloc(sizeof(int) * (2 * listaFilas->maxConsumers));
 
-    /*free(listaFilas);*/
-    return aux;
+    for(int i = 0; i < listaFilas->qtdSockets; i++)
+        aux[i] = listaFilas->listaSockets[i];
+
+    free(listaFilas->listaSockets);
+
+    listaFilas->listaSockets = aux;
+    listaFilas->maxConsumers = 2 * listaFilas->maxConsumers;
+    return listaFilas;
 }
 
 void imprimeFilas(No* listaFilas){

@@ -148,6 +148,7 @@ void* threadConnection(void* arg){
             publishQueue = (char*)malloc(queueNameSize*sizeof(char));
             for(int i = 0; i < queueNameSize; i++)
                 publishQueue[i] = (char)methodTxt[15+i];
+            printf("%d", existeFila(listaFilas, queueName));
 
             /* leitura da mensagem */
             message = (char*)malloc(messageSize*sizeof(char));
