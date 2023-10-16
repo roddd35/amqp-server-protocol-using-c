@@ -167,7 +167,7 @@ void basicConsume(int connfd, uint8_t* consumerTag){
     write(connfd, res, 44);
 }
 
-/* obs: no str0, muda a consumer-tag, ver se precisa lidar com isso */
+/* erro: A SOCKET ERROR OCURRED */
 void basicDeliver(int connfd, char* queueName, char* message){
     /* definir o tamanho da mensagem e fila e alocar espaço para suas strings */
     uint8_t messageSize = strlen(message);

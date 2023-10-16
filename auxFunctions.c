@@ -13,10 +13,10 @@ int char2int(char* message, int size){
 }
 
 int existeFila(No* listaFilas, char* queueName){
-    if(strcmp(listaFilas->nomeFila, queueName) == 0)
-        return 1;
-    else if(listaFilas->prox == NULL)
+    if(listaFilas->nomeFila == NULL)
         return 0;
+    else if(strcmp(listaFilas->nomeFila, queueName) == 0)
+        return 1;
     else return existeFila(listaFilas->prox, queueName);
 }
 
