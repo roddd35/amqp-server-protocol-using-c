@@ -136,6 +136,17 @@ void* threadConnection(void* arg){
             uint8_t* ctag = generateCTAG();
             /* printf("%s\n", ctag); */
 
+            /* inscrever consumidor na fila, caso ela já exista */
+            int queueNameSize = char2int(&methodTxt[13], 1);
+            queueName = (char*)malloc(queueNameSize*sizeof(char));
+            for(int i = 0; i < queueNameSize; i++)
+                queueName[i] = (char)methodTxt[14+i];
+            if(!existeFila(listaFilas, queueName)){
+                printf("Por favor, inscreva o consumidor em uma fila existente!\n");
+                exit(0);
+            }
+            listaFilas = adicionaFila(listaFilas, listaFilas, queueName, connfd);
+
             basicConsume(connfd, ctag);
         }
 
@@ -143,13 +154,18 @@ void* threadConnection(void* arg){
         else if(methodID == 40){
             /* separar o nome da fila e seu tamanho */
             int queueNameSize = char2int(&methodTxt[14], 1);
-            int messageSize = char2int(&methodTxt[46 + queueNameSize], 1);
+            int messageSize = char2int(&methodTxt[43 + queueNameSize], 4);
 
             /* leitura do nome da fila */
             publishQueue = (char*)malloc(queueNameSize*sizeof(char));
             for(int i = 0; i < queueNameSize; i++)
                 publishQueue[i] = (char)methodTxt[15+i];
-            printf("A fila existe?: %d\n", existeFila(listaFilas, queueName));
+
+            /* verifica se a fila que estamos publicando existe */
+            if(!existeFila(listaFilas, publishQueue)){
+                printf("Por favor, publique as mensagens em filas declaradas!\n");
+                exit(0);
+            }
 
             /* leitura da mensagem */
             message = (char*)malloc(messageSize*sizeof(char));
