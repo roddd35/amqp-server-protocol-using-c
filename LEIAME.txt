@@ -1,0 +1,70 @@
+AUTOR:
+	Rodrigo de Castro Michelassi
+	13672703
+	rodrigo.michelassi@usp.br
+
+
+DESCRIÇÃO:
+	O programa descrito contém uma implementação em C de um servidor, seguindo o protocolo AMQP para troca de mensagens. Esse código foi descrito seguindo o funcionamento 
+de um servidor AMQP RabbitMQ, e permite o funcionamento de 3 objetos principais do protocolo: Consumer, Publisher, Declare; responsáveis por consumir mensagens em uma fila, 
+publicar mensagens em uma fila e declarar uma fila, respectivamente.
+	
+
+COMO EXECUTAR:
+
+	O programa recebido pode ser compilado utilizando o comando make. Vale lembrar que, para obter o make em uma máquina com Ubuntu, podemos rodar o seguinte comando no 
+terminal:
+
+		$ sudo apt-get update
+		$ sudo apt-get install make
+		
+	Com isso instalado, podemos ir ao diret\'f3rio do jogo e rodar:
+	
+		$ make	   	# compila o servidor
+		$ make clean   	# limpa os arquivos desnecessários e/ou gerados durante as outras compilações
+		
+	Após isso, o programa está compilado, e basta rodar:
+	
+		$ ./server <PORT>
+		
+onde <PORT> deve ser substituído pela porta em que o programa será executado. 
+	A fim de testes, todas as execuções do programa foram feitas na porta 5672, porta padrão para o protocolo AMQP. Pode ser necessário limpar a execução dessa porta, 
+caso ela jáesteja em uso em sua máquina
+
+
+TESTES E EXECUÇÃO
+	
+	Para utilizar o servidor, estaremos utilizando o pacote AMQP-TOOLS, disponível para distribuições Linux baseadas em Debian. OBS: Apesar de sua semelhança, esse pacote 
+não está disponível para máquinas MAC-OS.
+	O pacote AMQP-TOOLS pode ser instalado com:
+
+	$ sudo apt-get update 
+	$ sudo apt-get install amqp-tools
+
+	Com esse pacote instalado, o servidor pode ser executado e testado. Para, respectivamente, declarar uma fila, inscrever um consumidor nessa fila, e publicar uma 
+mensagem (que será enviada para o consumidor), faça:
+
+	$ amqp-declare-queue -q nomeFila
+	$ amqp-consume -q nomeFila cat
+	$ amqp-publish -r nomeFila -b "mensagem"
+
+	Lembre que o servidor irá rodar infinitamente em um terminal, até que seja terminado, assim como o consumidor, que espera sua vez na fila para receber uma mensagem, 
+e será enviado ao fim da fila após isso, em um esquema Round-Robin. O servidor pode ser testado conforme desejado pelo usuário com a quantidade de clientes e filas desejadas.
+
+
+DEPENDÊNCIAS:
+	Para executar o arquivo .C \'e9 necess\'e1rio, em uma máquina com UBUNTU, utilizar o programa GCC, para obte-lo digite no terminal:
+		
+		$ sudo apt-get update
+		$ sudo apt-get install gcc
+
+	Além disso, é necessário possuir o MAKE em sua máquina. Para instalar essa ferramenta, use:
+	
+		$ sudo apt-get install make
+
+	Como valores de referência, esse programa foi feito em uma máquina virtual com as seguintes especificações
+		Versão Ubuntu: Ubuntu 22.04
+		Versão GCC: gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0
+		Processador: Intel(R) Core(TM) i3-4170 CPU @ 3.70GHz
+		Memória Sistema: 2GB 	# definido para a máquina virtual.
+}
