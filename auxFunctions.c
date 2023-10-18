@@ -25,7 +25,7 @@ int getConsumerSock(No* listaFilas, char* queueName){
 
     if(strcmp(listaFilas->nomeFila, queueName) == 0){
         aux = listaFilas->listaSockets[0];
-        
+
         /* esquema round robin de rotacao na fila */
         for(int i = 0; i < listaFilas->qtdSockets - 1; i++)
             listaFilas->listaSockets[i] = listaFilas->listaSockets[i+1];
