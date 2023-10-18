@@ -20,6 +20,23 @@ int existeFila(No* listaFilas, char* queueName){
     else return existeFila(listaFilas->prox, queueName);
 }
 
+int getConsumerSock(No* listaFilas, char* queueName){
+    int aux;
+
+    if(strcmp(listaFilas->nomeFila, queueName) == 0){
+        aux = listaFilas->listaSockets[0];
+        
+        /* esquema round robin de rotacao na fila */
+        for(int i = 0; i < listaFilas->qtdSockets - 1; i++)
+            listaFilas->listaSockets[i] = listaFilas->listaSockets[i+1];
+        listaFilas->listaSockets[listaFilas->qtdSockets - 1] = aux;
+
+        return aux;
+    }
+    else 
+        return existeFila(listaFilas->prox, queueName);
+}
+
 uint8_t* generateCTAG(){
     uint8_t str1[] = {0x1f, 0x61, 0x6d, 0x71, 0x2e, 0x63, 0x74, 0x61, 0x67, 0x2d};
     uint8_t str2[] = {0xce};

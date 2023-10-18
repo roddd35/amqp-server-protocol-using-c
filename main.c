@@ -88,6 +88,7 @@ int main (int argc, char **argv) {
 void* threadConnection(void* arg){
     struct ThreadArgs* args = (struct ThreadArgs*)arg;
     int connfd = args->connfd;
+    int consumerSock;
     int methodID;
     char methodTxt[MAX_CHAR];
     char* queueName = NULL;
@@ -128,6 +129,8 @@ void* threadConnection(void* arg){
             closeChannelOk(connfd);
             closeConnection(connfd);
             close(connfd);
+            printf("[Uma conexão fechada]\n");
+            free(args);
         }   
 
         /* INSCREVER CONSUMIDOR NA FILA */
@@ -172,18 +175,19 @@ void* threadConnection(void* arg){
             for(int i = 0; i < messageSize; i++)
                 message[i] = (char)methodTxt[(47 + queueNameSize) + i];
 
+            consumerSock = getConsumerSock(listaFilas, publishQueue);
+
             closeChannel(connfd);
-            basicDeliver(connfd, publishQueue, message);
-            basicAck(connfd);
+            basicDeliver(consumerSock, publishQueue, message);
+            basicAck(connfd);   /* verificar se mandamos aqui o socket do consumer tb */
             closeChannelOk(connfd);
             closeConnection(connfd);
             close(connfd);
+            printf("[Uma conexão fechada]\n");
+            free(args);
         }
     }
-    printf("[Uma conexão fechada]\n");
-
-    /* close(connfd); */
-    free(args);
+    /* free(args); */
 
     return NULL;
 }
