@@ -1,6 +1,10 @@
 #include "amqpFunc.h"
 #include "auxFunctions.h"
 
+#ifndef htonll
+#define htonll(x) ((((uint64_t)htonl(x)) << 32) + htonl((x) >> 32))
+#endif
+
 /* Fazer a leitura do cabeçalho AMQP */
 int readHeader(int connfd){
     char header[MAX_CHAR];
@@ -179,19 +183,19 @@ void basicConsume(int connfd, uint8_t* consumerTag){
 
 /* Publicar uma mensagem em uma fila */
 No* basicPublish(No* listaFilas, char methodTxt[MAX_CHAR], int connfd){
-    ssize_t size;
+    /* ssize_t size; */
     uint8_t* publishQueue = NULL;
     uint8_t* message = NULL;
-    char aux[MAX_CHAR];
+    /* char aux[MAX_CHAR]; */
 
     /* encontrar o tamanho da exchange e o nome da fila */
-    uint8_t exchageNameSize = char2int(&(methodTxt[13]), 1);
-    uint8_t queueNameSize = char2int(&(methodTxt[14 + exchageNameSize]), 1);
+    uint8_t exchangeNameSize = char2int(&(methodTxt[13]), 1);
+    uint8_t queueNameSize = char2int(&(methodTxt[14 + exchangeNameSize]), 1);
 
     /* leitura do nome da fila */
     publishQueue = (uint8_t*)malloc(queueNameSize * sizeof(uint8_t));
     for(int i = 0; i < queueNameSize; i++)
-        publishQueue[i] = (uint8_t)methodTxt[15 + exchageNameSize + i];
+        publishQueue[i] = (uint8_t)methodTxt[15 + exchangeNameSize + i];
 
     /* verifica se a fila que estamos publicando existe */
     if(!existeFila(listaFilas, (char*)publishQueue)){
@@ -199,52 +203,17 @@ No* basicPublish(No* listaFilas, char methodTxt[MAX_CHAR], int connfd){
         exit(0);
     }
 
-    /* leitura do segundo frame (content-header) */
-    size = read(connfd, aux, 7);
-    if(size == -1){
-        close(connfd);
-        exit(0);
-    }
-
-    int length = char2int(&aux[3], 4);
-    size = read(connfd, aux+7, length+1);
-    if(size <= 0){
-        close(connfd);
-        exit(0);
-    }
-
-    uint64_t bodySize = char2LongLong(&aux[11], 8);
+    /* pode ser 29 */
+    uint64_t bodySize = char2LongLong(&methodTxt[28 + exchangeNameSize + queueNameSize], 8);
 
     /* leitura do terceiro frame (content-body) */
-    size = read(connfd, aux, 7);
-    if(size <= 0){
-        close(connfd);
-        exit(0);
-    }
-
-    length = char2int(&aux[3], 4);
-    size = read(connfd, aux+7, length+1);
-    if(size == -1){
-        close(connfd);
-        exit(0);
-    }    
-
+    uint8_t messageSize = char2int(&methodTxt[43 + queueNameSize + exchangeNameSize], 4);
     if(bodySize != 0){
         message = (uint8_t*)malloc(sizeof(uint8_t) * bodySize);
-        for(int i = 0; i < bodySize; i++){
-            message[i] = (uint8_t)aux[7+i];
+        for(int i = 0; i < messageSize; i++){
+            message[i] = (uint8_t)methodTxt[47 + exchangeNameSize + queueNameSize + i];
         }
     }
-
-    /* channel.close */
-    size = read(connfd, methodTxt, 7);
-    if(size == -1){
-        close(connfd);
-        exit(0);
-    }
-
-    length = char2int(&methodTxt[3], 4);
-    size = read(connfd, methodTxt+7, length + 1);
 
     listaFilas = basicDeliver(listaFilas, publishQueue, message, bodySize);
 
