@@ -1,10 +1,11 @@
 #include "amqpFunc.h"
 #include "auxFunctions.h"
 
+/* Fazer a leitura do cabeçalho AMQP */
 int readHeader(int connfd){
     char header[MAX_CHAR];
     ssize_t size;
-    
+
     /* ler o header, dar um write nele pro usuario caso nao seja aceito */
     size = read(connfd, header, sizeof(header));
     if(size == -1 || strncmp("\x41\x4d\x51\x50\x00\x00\x09\x01", header, 8) != 0){
@@ -16,6 +17,7 @@ int readHeader(int connfd){
     return 1;
 }
 
+/* Função responsável por escrever a proposta de conexão */
 void connectionStart(int connfd){
     char conn[MAX_CHAR];
     ssize_t size;
@@ -62,6 +64,7 @@ void connectionStart(int connfd){
     }
 }
 
+/* Connection Tune */
 void connectionTune(int connfd){
     char tune[MAX_CHAR];
     ssize_t size;
@@ -76,6 +79,7 @@ void connectionTune(int connfd){
         close(connfd);
 }
 
+/* Abrir Conexão */
 void connectionOpen(int connfd){
     char conn[MAX_CHAR];
     ssize_t size;
@@ -89,6 +93,7 @@ void connectionOpen(int connfd){
     write(connfd, "\x01\x00\x00\x00\x00\x00\x05\x00\x0a\x00\x29\x00\xce", 13);
 }
 
+/* Abrir Canal */
 void channelOpen(int connfd){
     char channel[MAX_CHAR];
     ssize_t size;
@@ -102,6 +107,7 @@ void channelOpen(int connfd){
     write(connfd, "\x01\x00\x01\x00\x00\x00\x08\x00\x14\x00\x0b\x00\x00\x00\x00\xce", 16);
 }
 
+/* Declarar uma Fila */
 void queueDeclare(int connfd, int queueNameSize, char* queueName){    
     /* concatenar a mensagem padrão com o nome da fila */
     uint8_t messageSize = 4 + queueNameSize + 1 + 8;
@@ -128,6 +134,7 @@ void queueDeclare(int connfd, int queueNameSize, char* queueName){
     write(connfd, res, sizeof(res));
 }
 
+/* Fechar Canal */
 void closeChannel(int connfd){
     char chMessage[MAX_CHAR];
     ssize_t size;
@@ -138,11 +145,13 @@ void closeChannel(int connfd){
         close(connfd);
 }
 
+/* Confirmar o fechamento de Canal */
 void closeChannelOk(int connfd){
     /* Caso receba reply=200, escrever Channel.Close-Ok*/
     write(connfd, "\x01\x00\x01\x00\x00\x00\x04\x00\x14\x00\x29\xce", 12);
 }
 
+/* Fechar Conexão */
 void closeConnection(int connfd){
     char connMessage[MAX_CHAR];
     ssize_t size;
@@ -156,6 +165,7 @@ void closeConnection(int connfd){
     write(connfd, "\x01\x00\x00\x00\x00\x00\x04\x00\x0a\x00\x33\xce", 12);
 }
 
+/* Escrever o Consume */
 void basicConsume(int connfd, uint8_t* consumerTag){
     /* escrever o consume-ok */
     uint8_t res[44];
@@ -167,11 +177,84 @@ void basicConsume(int connfd, uint8_t* consumerTag){
     write(connfd, res, 44);
 }
 
-/*------- BASIC.DELIVER -------*/
-No* basicDeliver(No* listaFilas, char* queueName, uint8_t* message, int bodySize){
+/* Publicar uma mensagem em uma fila */
+No* basicPublish(No* listaFilas, char methodTxt[MAX_CHAR], int connfd){
+    ssize_t size;
+    uint8_t* publishQueue = NULL;
+    uint8_t* message = NULL;
+    char aux[MAX_CHAR];
+
+    /* encontrar o tamanho da exchange e o nome da fila */
+    uint8_t exchageNameSize = char2int(&(methodTxt[13]), 1);
+    uint8_t queueNameSize = char2int(&(methodTxt[14 + exchageNameSize]), 1);
+
+    /* leitura do nome da fila */
+    publishQueue = (uint8_t*)malloc(queueNameSize * sizeof(uint8_t));
+    for(int i = 0; i < queueNameSize; i++)
+        publishQueue[i] = (uint8_t)methodTxt[15 + exchageNameSize + i];
+
+    /* verifica se a fila que estamos publicando existe */
+    if(!existeFila(listaFilas, (char*)publishQueue)){
+        printf("Por favor, publique as mensagens em filas declaradas!\n");
+        exit(0);
+    }
+
+    /* leitura do segundo frame (content-header) */
+    size = read(connfd, aux, 7);
+    if(size == -1){
+        close(connfd);
+        exit(0);
+    }
+
+    int length = char2int(&aux[3], 4);
+    size = read(connfd, aux+7, length+1);
+    if(size <= 0){
+        close(connfd);
+        exit(0);
+    }
+
+    uint64_t bodySize = char2LongLong(&aux[11], 8);
+
+    /* leitura do terceiro frame (content-body) */
+    size = read(connfd, aux, 7);
+    if(size <= 0){
+        close(connfd);
+        exit(0);
+    }
+
+    length = char2int(&aux[3], 4);
+    size = read(connfd, aux+7, length+1);
+    if(size == -1){
+        close(connfd);
+        exit(0);
+    }    
+
+    if(bodySize != 0){
+        message = (uint8_t*)malloc(sizeof(uint8_t) * bodySize);
+        for(int i = 0; i < bodySize; i++){
+            message[i] = (uint8_t)aux[7+i];
+        }
+    }
+
+    /* channel.close */
+    size = read(connfd, methodTxt, 7);
+    if(size == -1){
+        close(connfd);
+        exit(0);
+    }
+
+    length = char2int(&methodTxt[3], 4);
+    size = read(connfd, methodTxt+7, length + 1);
+
+    listaFilas = basicDeliver(listaFilas, publishQueue, message, bodySize);
+
+    return listaFilas;
+}
+
+/* Entregar a mensagem a um consumer */
+No* basicDeliver(No* listaFilas, uint8_t* queueName, uint8_t* message, long long int bodySize){
     uint32_t length;
     No* noAux = listaFilas;
-
 
     /* buscar a fila a ser publicada a mensagem */
     while(noAux->nomeFila != NULL){
@@ -185,7 +268,7 @@ No* basicDeliver(No* listaFilas, char* queueName, uint8_t* message, int bodySize
     uint64_t dTag = noAux->dTag[0];
 
     /* rotacao da fila -> esquema round-robin */
-    listaFilas = roundRobin(listaFilas, listaFilas, queueName);
+    listaFilas = roundRobin(listaFilas, listaFilas, (char*)queueName);
     
 
     /* class(2) + method(2) + queueNameSize + queueName + messageCount(4) + consumerCount(4) */
@@ -229,7 +312,6 @@ No* basicDeliver(No* listaFilas, char* queueName, uint8_t* message, int bodySize
     uint8_t deliveryMode[] = {0x01};
 
     bodySize = htonll(bodySize);
-
 
     write(consumerSock, type2, 1);
     write(consumerSock, channel2, 2);

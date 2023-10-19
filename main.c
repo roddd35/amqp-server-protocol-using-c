@@ -12,7 +12,6 @@
 
 void* threadConnection(void* arg);
 
-uint64_t dTag = 1;
 No* listaFilas;
 
 /*-*-*- MAIN -*-*-*/
@@ -88,12 +87,10 @@ int main (int argc, char **argv) {
 /*-*-*- OPERACOES DO AMQP USANDO THREADS -*-*-*/
 void* threadConnection(void* arg){
     struct ThreadArgs* args = (struct ThreadArgs*)arg;
-    int methodID;
+    int methodID = 0;
     int connfd = args->connfd;
     char methodTxt[MAX_CHAR];
     char* queueName = NULL;
-    char* publishQueue = NULL;
-    uint8_t* message = NULL;
     ssize_t size;
 
     printf("[Uma conexão aberta]\n");
@@ -121,16 +118,12 @@ void* threadConnection(void* arg){
 
             /* registrar a fila na lista de filas */
             listaFilas = adicionaFila(listaFilas, listaFilas, queueName, connfd, NULL);
-            /* imprimeFilas(listaFilas); */
 
             /* declarar a fila */
             queueDeclare(connfd, queueNameSize, queueName);
             closeChannel(connfd);
             closeChannelOk(connfd);
             closeConnection(connfd);
-            close(connfd);
-            printf("[Uma conexão fechada]\n");
-            free(args);
         }   
 
         /* INSCREVER CONSUMIDOR NA FILA */
@@ -151,76 +144,24 @@ void* threadConnection(void* arg){
             }
             /* registrar a fila */
             listaFilas = adicionaFila(listaFilas, listaFilas, queueName, connfd, ctag);
+            /* imprimeFilas(listaFilas); */
 
             basicConsume(connfd, ctag);
         }
 
         /* PUBLICAR MENSAGEM NA FILA */
         else if(methodID == 40){
-            /* separar o nome da fila e seu tamanho */
-            char aux[MAX_CHAR];
-            int exchageNameSize = char2int(&(methodTxt[13]), 1);
-            int queueNameSize = char2int(&(methodTxt[14 + exchageNameSize]), 1);
-
-            /* leitura do nome da fila */
-            publishQueue = (char*)malloc(queueNameSize*sizeof(char));
-            for(int i = 0; i < queueNameSize; i++)
-                publishQueue[i] = (char)methodTxt[15+ exchageNameSize + i];
-
-            /* verifica se a fila que estamos publicando existe */
-            if(!existeFila(listaFilas, publishQueue)){
-                printf("Por favor, publique as mensagens em filas declaradas!\n");
-                exit(0);
-            }
-
-            /* leitura do segundo frame */
-            size = read(connfd, aux, 7);
-            if(size == -1){
-                close(connfd);
-                exit(0);
-            }
-
-            int length = char2int(&aux[3], 4);
-            size = read(connfd, aux+7, length+1);
-            if(size <= 0){
-                close(connfd);
-                exit(0);
-            }
-
-            int bodySize = char2LongLong(&aux[11], 8);
-
-            size = read(connfd, aux, 7);
-            if(size <= 0){
-                close(connfd);
-                exit(0);
-            }
-
-            /* leitura do terceiro frame */
-            length = char2int(&aux[3], 4);
-            size = read(connfd, aux+7, length+1);
-            if(size <= 0){
-                close(connfd);
-                exit(0);
-            }    
-
-            if(bodySize != 0){
-                message = (uint8_t*)malloc(sizeof(uint8_t) * bodySize);
-                for(uint64_t j=0; j<bodySize; j++){
-                    message[j] = (uint8_t)aux[7+j];
-                }
-            }
-
-            closeChannel(connfd);
-            listaFilas = basicDeliver(listaFilas, queueName, message, bodySize);
+            listaFilas = basicPublish(listaFilas, methodTxt, connfd);
             basicAck(connfd);
             closeChannelOk(connfd);
             closeConnection(connfd);
-            close(connfd);
-            printf("[Uma conexão fechada]\n");
-            free(args);
         }
     }
-    /* free(args); */
+    if(methodID != 20){
+        close(connfd);
+        printf("[Uma conexão fechada]\n");
+    }
+    free(args); 
 
     return NULL;
 }

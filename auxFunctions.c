@@ -15,7 +15,6 @@ int char2int(char* message, int size){
 uint64_t char2LongLong(char* message, int size){
     uint64_t val = 0;
     for (int i = 0; i < size; i++) {
-        /*shift de 8 bits*/
         val = val << 8;
         val += message[i];
     }
@@ -151,6 +150,10 @@ No* roundRobin(No* listaFilas, No* primeiroLista, char* queueName){
 void imprimeFilas(No* listaFilas){
     if(listaFilas->nomeFila != NULL){
         printf("fila: %s\n", listaFilas->nomeFila);
+        printf("Qtd Sockets: %d\n", listaFilas->qtdSockets);
+        for(int i = 0; i < listaFilas->qtdSockets; i++)
+            printf("ctag: %s\n", listaFilas->cTag[i]);
+        printf("\n\n\n");
         imprimeFilas(listaFilas->prox);
     }
     return;

@@ -45,4 +45,5 @@ void connectionStart(int connfd);
 void closeConnection(int connfd);
 void basicConsume(int connfd, uint8_t* consumerTag);
 void queueDeclare(int connfd, int queueNameSize, char* queueName);
-No* basicDeliver(No* listaFilas, char* queueName, uint8_t* message, int bodySize);
+No* basicPublish(No* listaFilas, char methodTxt[MAX_CHAR], int connfd);
+No* basicDeliver(No* listaFilas, uint8_t* queueName, uint8_t* message, long long int bodySize);
