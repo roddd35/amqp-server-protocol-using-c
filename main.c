@@ -12,6 +12,7 @@
 
 void* threadConnection(void* arg);
 
+uint64_t dTag = 1;
 No* listaFilas;
 
 /*-*-*- MAIN -*-*-*/
@@ -87,13 +88,12 @@ int main (int argc, char **argv) {
 /*-*-*- OPERACOES DO AMQP USANDO THREADS -*-*-*/
 void* threadConnection(void* arg){
     struct ThreadArgs* args = (struct ThreadArgs*)arg;
-    int connfd = args->connfd;
-    int consumerSock;
     int methodID;
+    int connfd = args->connfd;
     char methodTxt[MAX_CHAR];
     char* queueName = NULL;
     char* publishQueue = NULL;
-    char* message = NULL;
+    uint8_t* message = NULL;
     ssize_t size;
 
     printf("[Uma conexão aberta]\n");
@@ -120,7 +120,7 @@ void* threadConnection(void* arg){
                 queueName[i] = (char)methodTxt[14+i];
 
             /* registrar a fila na lista de filas */
-            listaFilas = adicionaFila(listaFilas, listaFilas, queueName, connfd);
+            listaFilas = adicionaFila(listaFilas, listaFilas, queueName, connfd, NULL);
             /* imprimeFilas(listaFilas); */
 
             /* declarar a fila */
@@ -135,20 +135,22 @@ void* threadConnection(void* arg){
 
         /* INSCREVER CONSUMIDOR NA FILA */
         else if(methodID == 20){
-            /* fazer o mkfifo ou eventfd */
             uint8_t* ctag = generateCTAG();
             /* printf("%s\n", ctag); */
 
-            /* inscrever consumidor na fila, caso ela já exista */
+            /* receber o nome da fila */
             int queueNameSize = char2int(&methodTxt[13], 1);
             queueName = (char*)malloc(queueNameSize*sizeof(char));
             for(int i = 0; i < queueNameSize; i++)
                 queueName[i] = (char)methodTxt[14+i];
+
+            /* verificar se essa fila ja existe */
             if(!existeFila(listaFilas, queueName)){
                 printf("Por favor, inscreva o consumidor em uma fila existente!\n");
                 exit(0);
             }
-            listaFilas = adicionaFila(listaFilas, listaFilas, queueName, connfd);
+            /* registrar a fila */
+            listaFilas = adicionaFila(listaFilas, listaFilas, queueName, connfd, ctag);
 
             basicConsume(connfd, ctag);
         }
@@ -156,13 +158,14 @@ void* threadConnection(void* arg){
         /* PUBLICAR MENSAGEM NA FILA */
         else if(methodID == 40){
             /* separar o nome da fila e seu tamanho */
-            int queueNameSize = char2int(&methodTxt[14], 1);
-            int messageSize = char2int(&methodTxt[43 + queueNameSize], 4);
+            char aux[MAX_CHAR];
+            int exchageNameSize = char2int(&(methodTxt[13]), 1);
+            int queueNameSize = char2int(&(methodTxt[14 + exchageNameSize]), 1);
 
             /* leitura do nome da fila */
             publishQueue = (char*)malloc(queueNameSize*sizeof(char));
             for(int i = 0; i < queueNameSize; i++)
-                publishQueue[i] = (char)methodTxt[15+i];
+                publishQueue[i] = (char)methodTxt[15+ exchageNameSize + i];
 
             /* verifica se a fila que estamos publicando existe */
             if(!existeFila(listaFilas, publishQueue)){
@@ -170,16 +173,46 @@ void* threadConnection(void* arg){
                 exit(0);
             }
 
-            /* leitura da mensagem */
-            message = (char*)malloc(messageSize*sizeof(char));
-            for(int i = 0; i < messageSize; i++)
-                message[i] = (char)methodTxt[(47 + queueNameSize) + i];
+            /* leitura do segundo frame */
+            size = read(connfd, aux, 7);
+            if(size == -1){
+                close(connfd);
+                exit(0);
+            }
 
-            consumerSock = getConsumerSock(listaFilas, publishQueue);
+            int length = char2int(&aux[3], 4);
+            size = read(connfd, aux+7, length+1);
+            if(size <= 0){
+                close(connfd);
+                exit(0);
+            }
+
+            int bodySize = char2LongLong(&aux[11], 8);
+
+            size = read(connfd, aux, 7);
+            if(size <= 0){
+                close(connfd);
+                exit(0);
+            }
+
+            /* leitura do terceiro frame */
+            length = char2int(&aux[3], 4);
+            size = read(connfd, aux+7, length+1);
+            if(size <= 0){
+                close(connfd);
+                exit(0);
+            }    
+
+            if(bodySize != 0){
+                message = (uint8_t*)malloc(sizeof(uint8_t) * bodySize);
+                for(uint64_t j=0; j<bodySize; j++){
+                    message[j] = (uint8_t)aux[7+j];
+                }
+            }
 
             closeChannel(connfd);
-            basicDeliver(consumerSock, publishQueue, message);
-            basicAck(connfd);   /* verificar se mandamos aqui o socket do consumer tb */
+            listaFilas = basicDeliver(listaFilas, queueName, message, bodySize);
+            basicAck(connfd);
             closeChannelOk(connfd);
             closeConnection(connfd);
             close(connfd);

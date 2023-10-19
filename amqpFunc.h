@@ -20,6 +20,20 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 
+struct ThreadArgs {
+    int connfd;
+};
+
+typedef struct cel{
+    char* nomeFila;
+    int* listaSockets;
+    int qtdSockets;
+    int maxConsumers;
+    uint8_t** cTag;
+    uint64_t* dTag;
+    struct cel* prox;
+}No;
+
 int readHeader(int connfd);
 void basicAck(int connfd);
 void channelOpen(int connfd);
@@ -30,9 +44,5 @@ void connectionOpen(int connfd);
 void connectionStart(int connfd);
 void closeConnection(int connfd);
 void basicConsume(int connfd, uint8_t* consumerTag);
-void basicDeliver(int connfd, char* queueName, char* message);
 void queueDeclare(int connfd, int queueNameSize, char* queueName);
-
-struct ThreadArgs {
-    int connfd;
-};
+No* basicDeliver(No* listaFilas, char* queueName, uint8_t* message, int bodySize);

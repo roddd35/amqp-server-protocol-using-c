@@ -167,43 +167,94 @@ void basicConsume(int connfd, uint8_t* consumerTag){
     write(connfd, res, 44);
 }
 
-/* erro: A SOCKET ERROR OCURRED */
-void basicDeliver(int connfd, char* queueName, char* message){
-    /* definir o tamanho da mensagem e fila e alocar espaço para suas strings */
-    uint8_t messageSize = strlen(message);
-    uint8_t queueNameSize = strlen(queueName);
-    uint8_t* strFila = malloc(sizeof(uint8_t) * (queueNameSize + 1));
-    uint8_t* strMessage = malloc(sizeof(uint8_t) * (messageSize + 1));
+/*------- BASIC.DELIVER -------*/
+No* basicDeliver(No* listaFilas, char* queueName, uint8_t* message, int bodySize){
+    uint32_t length;
+    No* noAux = listaFilas;
 
-    /* definir as strings de prefixos e sufixos padrões das mensagens */
-    uint8_t str0[] = {0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x38, 0x00, 0x3c, 0x00, 0x3c, 0x1f, 0x61, 0x6d, 0x71, 0x2e, 0x63, 0x74, 0x61, 0x67, 0x2d, 0x78, 0x51, 0x36, 0x53, 0x73, 0x73, 0x66, 0x7a, 0x67, 0x50, 0x43, 0x51, 0x48, 0x4e, 0x63, 0x4a, 0x36, 0x64, 0x45, 0x59, 0x31, 0x77, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00};
-    uint8_t str1[] = {0xce, 0x02, 0x00, 0x01, 0x00, 0x00, 0x00, 0x0f, 0x00, 0x3c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x10, 0x00, 0x01, 0xce, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00};
-    uint8_t charFinal[] = {0xce};
 
-    /* definir a string que será levada como resposta */
-    uint8_t res[86 + queueNameSize + messageSize];
+    /* buscar a fila a ser publicada a mensagem */
+    while(noAux->nomeFila != NULL){
+        if(strcmp((const char*)noAux->nomeFila, (const char*)queueName) == 0)
+            break;
+        noAux = noAux->prox;
+    }
+
+    int consumerSock = noAux->listaSockets[0];
+    uint8_t* cTag = noAux->cTag[0];
+    uint64_t dTag = noAux->dTag[0];
+
+    /* rotacao da fila -> esquema round-robin */
+    listaFilas = roundRobin(listaFilas, listaFilas, queueName);
     
-    /* formar as strings com a mensagem e o nome da fila */
-    strFila[0] = queueNameSize;
-    for(int i = 0; i < queueNameSize; i++)
-        strFila[i + 1] = (uint8_t)queueName[i];
 
-    strMessage[0] = messageSize;
-    for(int i = 0; i < messageSize; i++)
-        strMessage[i+1] = (uint8_t)message[i];
+    /* class(2) + method(2) + queueNameSize + queueName + messageCount(4) + consumerCount(4) */
+    length = 16 + (uint8_t)sizeof(cTag) + (uint8_t)sizeof(queueName);
+    length = htonl(length);
 
-    /* concatenar todos trechos da mensagem para dar write */
     /* 1. frame */
-    memcpy(res, str0, sizeof(str0));
-    memcpy(res + sizeof(str0), strFila, queueNameSize + 1);
-    memcpy(res + sizeof(str0) + queueNameSize + 1, str1, sizeof(str1));
+    uint8_t type1[] = {0x01};
+    uint8_t channel1[] = {0x00, 0x01};
+    uint8_t classs1[] = {0x00, 0x3c};
+    uint8_t method1[] = {0x00, 0x3c};
+    uint8_t sizeC[] = {(uint8_t)sizeof(cTag)};
+    uint8_t redelivered[] = {0x00};
+    uint8_t exchangeSize[] = {0x00};
+    uint8_t queueNameSize[] = {(uint8_t)sizeof(queueName)};
+    uint8_t end[] = {0xce};
 
-    /* 2. e 3. frame */
-    memcpy(res + sizeof(str0) + queueNameSize + 1 + sizeof(str1), strMessage, messageSize + 1);
-    memcpy(res + sizeof(str0) + queueNameSize + 1 + sizeof(str1) + messageSize + 1, charFinal, 1);
+    write(consumerSock, type1, 1);
+    write(consumerSock, channel1, 2);
+    write(consumerSock, (uint8_t*)&length, 4);
+    write(consumerSock, classs1, 2);
+    write(consumerSock, method1, 2);
+    write(consumerSock, sizeC, 1);
+    write(consumerSock, cTag, (int)sizeof(cTag));
+    write(consumerSock, (uint8_t*)&dTag, 8);
+    write(consumerSock, redelivered, 1);
+    write(consumerSock, exchangeSize, 1);
+    write(consumerSock, queueNameSize, 1);
+    write(consumerSock, queueName, (uint8_t)sizeof(queueName));
+    write(consumerSock, end, 1);
 
-    /* escrever resposta */
-    write(connfd, res, sizeof(res));
+
+    /* 2. frame */
+    length = (uint32_t)15;
+    length = htonl(length);
+    uint8_t type2[] = {0x02};
+    uint8_t channel2[] = {0x00, 0x01};
+    uint8_t classID[] = {0x00, 0x3c};
+    uint8_t weight[] = {0x00, 0x00};
+    uint8_t propertyFlags[] = {0x10, 0x00};
+    uint8_t deliveryMode[] = {0x01};
+
+    bodySize = htonll(bodySize);
+
+
+    write(consumerSock, type2, 1);
+    write(consumerSock, channel2, 2);
+    write(consumerSock, (uint8_t*)&length, 4);
+    write(consumerSock, classID, 2);
+    write(consumerSock, weight, 2);
+    write(consumerSock, (uint8_t*)&bodySize, 8);
+    write(consumerSock, propertyFlags, 2);
+    write(consumerSock, deliveryMode, 1);
+    write(consumerSock, end, 1);
+
+
+    /* 3. frame */
+    length = (uint32_t)htonll(bodySize);
+    length = htonl(length);
+    uint8_t type3[] = {0x03};
+    uint8_t channel3[] = {0x00, 0x01};
+
+    write(consumerSock, type3, 1);
+    write(consumerSock, channel3, 2);
+    write(consumerSock, (uint8_t*)&length, 4);
+    write(consumerSock, (uint8_t*)message, htonll(bodySize));
+    write(consumerSock, end, 1);
+
+    return listaFilas;
 }
 
 void basicAck(int connfd){
