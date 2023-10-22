@@ -9,21 +9,25 @@ consumers=0
 publishers=0
 qtdDados=0
 
+#  compilar e executar
+make
+gnome-terminal -- bash -c "./server 5672"   # abre uma nova janela de terminal e executa um comando
+
 # declarar a fila de nome fila
 amqp-declare-queue -q fila
 
 # cadastrar 50 consumers na fila
-while [ $consumers -lt 50 ]; do
+while [ $consumers -lt 30 ]; do
     let consumers=consumers+1
     gnome-terminal -- bash -c "amqp-consume -q fila cat"
 done
 
-# a cada 10 publishers, vemos a quantidade de usos da CPU e afins
-# vamos ter 50 publishers no final
-# queremos fazer o teste com 50 publishers e 50 consumers
-while [ $qtdDados -lt 5 ]; do
+# a cada 7 publishers, vemos a quantidade de usos da CPU e afins
+# vamos ter 70 publishers no final
+# queremos fazer o teste com 70 publishers e 30 consumers
+while [ $qtdDados -lt 10 ]; do
     publishers=0
-    while [ $publishers -lt 10 ]; do
+    while [ $publishers -lt 7 ]; do
         let publishers=publishers+1
         amqp-publish -r fila -b "mensagem "
     done
