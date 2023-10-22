@@ -14,6 +14,7 @@ amqp-declare-queue -q fila
 
 # cadastrar 50 consumers na fila
 while [ $consumers -lt 50 ]; do
+    let consumers=consumers+1
     gnome-terminal -- bash -c "amqp-consume -q fila cat"
 done
 
