@@ -9,7 +9,7 @@ y = data['cpu']
 data = data.sort_values(by='pub')
 
 plt.plot(x,y, marker='o')
-plt.xlabel("Quantidade de publishers")
+plt.xlabel("Quantidade de Publishers")
 plt.ylabel("Uso da CPU (%)")
-plt.title("Desempenho com 100 clientes")
+plt.title("Desempenho com 10 clientes")
 plt.show()
